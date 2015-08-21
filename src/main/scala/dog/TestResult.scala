@@ -1,0 +1,59 @@
+package dog
+
+import scalaz._
+import scalaz.std.list._
+
+sealed abstract class TestResult[A] {
+
+  import TestResult._
+
+  def map[B](f: A => B): TestResult[B] = this match {
+    case Done(results) => Done(results.map(_.map(f)))
+    case Error(es, cs) => Error(es, cs)
+  }
+
+  def flatMap[B](f: A => TestResult[B]): TestResult[B] = this match {
+    case Done(results) => (results.head, results.tail) match {
+      case (Passed(a), List()) =>
+        try {
+          f(a)
+        } catch {
+          case e: Throwable => error[B](List(e), List())
+        }
+      case _ => AssertionResult.onlyNotPassed(results) match {
+        case List() => throw new Exception("oops!")
+        case x::xs => Done(NonEmptyList.nel(AssertionResult(x), xs.map(AssertionResult[B](_))))
+      }
+    }
+    case Error(es, cs) => Error(es, cs)
+  }
+}
+
+
+final case class Error[A](exceptions: List[Throwable], causes: List[NotPassedCause]) extends TestResult[A]
+final case class Done[A](results: NonEmptyList[AssertionResult[A]]) extends TestResult[A]
+
+object TestResult {
+
+  def apply[A](a: A): TestResult[A] = Done(NonEmptyList.nel(Passed(a), List()))
+
+  def error[A](es: List[Throwable], cs: List[NotPassedCause]): TestResult[A] =
+    Error[A](es, cs)
+
+  implicit val monadInstance: Monad[TestResult] = new Monad[TestResult] {
+    override def point[A](a: => A) = TestResult(a)
+    override def bind[A, B](fa: TestResult[A])(f: A => TestResult[B]) =
+      fa.flatMap(f)
+    override def map[A, B](fa: TestResult[A])(f: A => B) = fa.map(f)
+  }
+
+  implicit def equalInstance[A: Equal](implicit E: Equal[Throwable]): Equal[TestResult[A]] = new Equal[TestResult[A]] {
+    override def equal(a1: TestResult[A], a2: TestResult[A]) = (a1, a2) match {
+      case (Done(r1), Done(r2)) =>
+        NonEmptyList.nonEmptyListEqual(AssertionResult.equalInstance[A]).equal(r1, r2)
+      case (Error(es1, cs1), Error(es2, cs2)) =>
+        listEqual(E).equal(es1, es2) && listEqual(NotPassedCause.equalInstance).equal(cs1, cs2)
+      case _ => false
+    }
+  }
+}
