@@ -9,6 +9,9 @@ final case class Violated(reason: String) extends NotPassedCause
 
 object NotPassedCause {
 
+  def skip(reason: String): NotPassedCause = Skipped(reason)
+  def violate(reason: String): NotPassedCause = Violated(reason)
+
   def equalInstance: Equal[NotPassedCause] = new Equal[NotPassedCause] {
     override def equal(a1: NotPassedCause, a2: NotPassedCause) = (a1, a2) match {
       case (Violated(r1), Violated(r2)) => stringInstance.equal(r1, r2)
