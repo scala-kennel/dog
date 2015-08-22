@@ -37,7 +37,7 @@ object TestResult {
 
   def apply[A](a: A): TestResult[A] = Done(NonEmptyList.nel(Passed(a), List()))
 
-  def nel[A](n: NotPassed[A], l: List[AssertionResult[A]]) =
+  def nel[A](n: NotPassed[A], l: List[AssertionResult[A]]): TestResult[A] =
     Done(
       NonEmptyList.nel(
         n.asInstanceOf[AssertionResult[A]],
