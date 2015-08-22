@@ -45,7 +45,8 @@ object DogBuild extends Build {
     },
     scalapropsVersion := Version.scalaprops,
     libraryDependencies ++= Seq(
-      scalaz
+      scalaz,
+      scalatest % "test"
     ),
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
@@ -110,8 +111,10 @@ object DogBuild extends Build {
     object Version {
       val scalaz = "7.1.3"
       val scalaprops = "0.1.13"
+      val scalatest = "2.2.5"
     }
 
     val scalaz = "org.scalaz" %% "scalaz-core" % Version.scalaz
+    val scalatest = "org.scalatest" %% "scalatest" % Version.scalatest
   }
 }
