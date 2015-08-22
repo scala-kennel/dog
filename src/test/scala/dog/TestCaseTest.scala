@@ -11,4 +11,16 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
     }yield a)
     assert(target.run(()) == TestResult(0))
   }
+
+  "Assertion" should "run multple assertion" in {
+    val assert0 = AssertionResult.pass(())
+    val assert1 = AssertionResult.pass(())
+    val assert2 = AssertionResult.pass(())
+    val target = TestCase[Unit](for {
+      a <- Assertions(
+        (assert0 |+| assert1).<::(assert2)
+      )
+    }yield a)
+    assert(target.run(()) == TestResult(()))
+  }
 }

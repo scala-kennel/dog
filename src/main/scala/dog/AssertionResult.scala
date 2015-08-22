@@ -3,9 +3,24 @@ package dog
 import scalaz._
 
 sealed abstract class AssertionResult[A] {
+
+  import AssertionResult._
+
   def map[B](f: A => B): AssertionResult[B] = this match {
-    case Passed(a) => Passed(f(a))
-    case NotPassed(c) => NotPassed(c)
+    case Passed(a) => pass(f(a))
+    case NotPassed(c) => apply(c)
+  }
+
+  def flatMap[B](f: A => AssertionResult[B]): AssertionResult[B] = this match {
+    case Passed(a) => f(a)
+    case NotPassed(c) => apply(c)
+  }
+
+  def |+|(a: => AssertionResult[A]): NonEmptyList[AssertionResult[A]] = (this, a) match {
+    case (Passed(_), p@Passed(_)) => NonEmptyList.nel(p, List())
+    case (Passed(_), p@NotPassed(_)) => NonEmptyList.nel(p, List())
+    case (p@NotPassed(_), Passed(_)) => NonEmptyList.nel(p, List())
+    case (p1@NotPassed(_), p2@NotPassed(_)) => NonEmptyList.nel(p1, List(p2))
   }
 }
 
@@ -16,12 +31,17 @@ object AssertionResult {
 
   def apply[A](cause: NotPassedCause): AssertionResult[A] = NotPassed(cause)
 
+  def pass[A](value: A): AssertionResult[A] = Passed(value)
+
   def onlyNotPassed[A](xs: NonEmptyList[AssertionResult[A]]): List[NotPassedCause] =
     xs.list.collect {
       case NotPassed(x) => x
     }
 
-  implicit val functorInstance: Functor[AssertionResult] = new Functor[AssertionResult] {
+  implicit val monadInstance: Monad[AssertionResult] = new Monad[AssertionResult] {
+    override def point[A](a: => A) = pass(a)
+    override def bind[A, B](fa: AssertionResult[A])(f: A => AssertionResult[B]) =
+      fa.flatMap(f)
     override def map[A, B](fa: AssertionResult[A])(f: A => B) = fa.map(f)
   }
 
