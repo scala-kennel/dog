@@ -22,7 +22,7 @@ sealed abstract class TestResult[A] {
         }
       case _ => AssertionResult.onlyNotPassed(results) match {
         case List() => throw new Exception("oops!")
-        case x::xs => Done(NonEmptyList.nel(AssertionResult(x), xs.map(AssertionResult[B](_))))
+        case x::xs => nel(NotPassed(x), xs.map(AssertionResult[B](_)))
       }
     }
     case Error(es, cs) => Error(es, cs)
@@ -31,11 +31,22 @@ sealed abstract class TestResult[A] {
 
 
 final case class Error[A](exceptions: List[Throwable], causes: List[NotPassedCause]) extends TestResult[A]
-final case class Done[A](results: NonEmptyList[AssertionResult[A]]) extends TestResult[A]
+final case class Done[A] private[dog] (results: NonEmptyList[AssertionResult[A]]) extends TestResult[A]
 
 object TestResult {
 
   def apply[A](a: A): TestResult[A] = Done(NonEmptyList.nel(Passed(a), List()))
+
+  def nel[A](n: NotPassed[A], l: List[AssertionResult[A]]) =
+    Done(
+      NonEmptyList.nel(
+        n.asInstanceOf[AssertionResult[A]],
+        l.filter(_ match {
+          case NotPassed(_) => true
+          case _ => false
+        })
+      )
+    )
 
   def error[A](es: List[Throwable], cs: List[NotPassedCause]): TestResult[A] =
     Error[A](es, cs)

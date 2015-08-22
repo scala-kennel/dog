@@ -1,6 +1,5 @@
 package dog
 
-import scalaz._
 import scalaprops._
 
 object TestGen {
@@ -19,15 +18,17 @@ object TestGen {
     Gen.oneOf(p, n)
   }
 
-  implicit def testResult[A: Gen](implicit T: Gen[Throwable]): Gen[TestResult[A]] = {
+  implicit def testResult[A](implicit G: Gen[A], T: Gen[Throwable]): Gen[TestResult[A]] = {
     lazy val error: Gen[TestResult[A]] = for {
       es <- Gen.list(T)
       cs <- if (es.isEmpty) Gen.listOf(notPassedCause, 1) else Gen.ilist(notPassedCause)
     } yield Error(es, cs.toList)
     lazy val done: Gen[TestResult[A]] =
       Gen.oneOf(
-        passed[A].map(p => Done(NonEmptyList.nel(p, List()))),
-        Gen.nonEmptyList(notPassed[A]).map(Done(_))
+        G.map(TestResult(_)),
+        notPassed[A].flatMap(n =>
+          Gen.list(assertionResult[A])
+            .map(ns => TestResult.nel(n.asInstanceOf[NotPassed[A]], ns)))
       )
     Gen.oneOf(error, done)
   }
