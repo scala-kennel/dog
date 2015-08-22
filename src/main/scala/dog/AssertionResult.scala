@@ -52,4 +52,11 @@ object AssertionResult {
       case _ => false
     }
   }
+
+  val toTestResult = new (AssertionResult ~> TestResult) {
+    def apply[A](r: AssertionResult[A]): TestResult[A] = r match {
+      case Passed(v) => TestResult(v)
+      case NotPassed(c) => TestResult.nel(NotPassed(c), List())
+    }
+  }
 }

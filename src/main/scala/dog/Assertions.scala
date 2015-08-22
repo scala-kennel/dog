@@ -4,15 +4,18 @@ import scalaz._
 
 object Assertions {
 
-  @annotation.tailrec
-  def apply[A](rs: NonEmptyList[AssertionResult[A]]): TestResult[A] = (rs.head, rs.tail) match {
-    case (Passed(v), List()) => TestResult(v)
-    case (Passed(_), t::ts) => apply(NonEmptyList.nel(t, ts))
-    case (NotPassed(c), ts) => TestResult.nel(NotPassed(c), ts)
+  val toTestResult = new (AssertionNel ~> TestResult) {
+    @annotation.tailrec
+    def apply[A](rs: AssertionNel[A]): TestResult[A] = (rs.head, rs.tail) match {
+      case (Passed(v), List()) => TestResult(v)
+      case (Passed(_), t::ts) => apply(NonEmptyList.nel(t, ts))
+      case (NotPassed(c), ts) => TestResult.nel(NotPassed(c), ts)
+    }
   }
 
-  def apply[A](r: AssertionResult[A]): TestResult[A] = r match {
-    case Passed(v) => TestResult(v)
-    case NotPassed(c) => TestResult.nel(NotPassed(c), List())
-  }
+  def apply[A](rs: AssertionNel[A]): TestResult[A] =
+    toTestResult(rs)
+
+  def apply[A](r: AssertionResult[A]): TestResult[A] =
+    AssertionResult.toTestResult(r)
 }

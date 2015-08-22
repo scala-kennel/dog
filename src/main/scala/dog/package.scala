@@ -16,4 +16,6 @@ package object dog {
       Kleisli.kleisli(body)
     }
   }
+
+  type AssertionNel[A] = NonEmptyList[AssertionResult[A]]
 }
