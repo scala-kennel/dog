@@ -4,6 +4,7 @@ import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
 import xerial.sbt.Sonatype._
 import com.typesafe.sbt.pgp.PgpKeys
+import scalaprops.ScalapropsPlugin.autoImport._
 
 object DogBuild extends Build {
   import Dependencies._
@@ -19,7 +20,8 @@ object DogBuild extends Build {
   )
 
   lazy val buildSettings = Seq(
-    sonatypeSettings
+    sonatypeSettings,
+    scalapropsWithScalazlaws
   ).flatten ++ Seq(
     scalaVersion := "2.11.7",
     crossScalaVersions := Seq("2.10.5", scalaVersion.value),
@@ -41,6 +43,7 @@ object DogBuild extends Build {
       else
         Nil
     },
+    scalapropsVersion := Version.scalaprops,
     libraryDependencies ++= Seq(
       scalaz
     ),
@@ -106,6 +109,7 @@ object DogBuild extends Build {
 
     object Version {
       val scalaz = "7.1.3"
+      val scalaprops = "0.1.13"
     }
 
     val scalaz = "org.scalaz" %% "scalaz-core" % Version.scalaz
