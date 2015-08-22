@@ -5,7 +5,7 @@ import org.scalatest.DiagrammedAssertions
 
 class TestCaseTest extends FlatSpec with DiagrammedAssertions {
 
-  "apply" should "return value" in {
+  "TestCase" should "return value" in {
     val target = TestCase(for {
       a <- TestResult(0)
     }yield a)
@@ -22,5 +22,16 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
       )
     }yield a)
     assert(target.run(()) == TestResult(()))
+  }
+
+  "Assertion" should "record multiple violations" in {
+    val target = TestCase[Unit](for {
+      a <- Assertions(
+        Assert.equal(1, 2) |+|
+        Assert.equal(2, 3)
+      )
+    }yield a)
+    val expected = TestResult.nel(NotPassed[Unit](Violated("expected: 1, but was: 2")), List(AssertionResult[Unit](Violated("expected: 2, but was: 3"))))
+    assert(target.run(()) == expected)
   }
 }
