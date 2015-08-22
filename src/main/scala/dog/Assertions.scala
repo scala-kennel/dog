@@ -10,4 +10,9 @@ object Assertions {
     case (Passed(_), t::ts) => apply(NonEmptyList.nel(t, ts))
     case (NotPassed(c), ts) => TestResult.nel(NotPassed(c), ts)
   }
+
+  def apply[A](r: AssertionResult[A]): TestResult[A] = r match {
+    case Passed(v) => TestResult(v)
+    case NotPassed(c) => TestResult.nel(NotPassed(c), List())
+  }
 }
