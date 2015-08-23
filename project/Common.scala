@@ -41,6 +41,7 @@ object Common {
     scalacOptions ++= PartialFunction.condOpt(CrossVersion.partialVersion(scalaVersion.value)){
       case Some((2, v)) if v >= 11 => unusedWarnings
     }.toList.flatten,
+    fullResolvers ~= {_.filterNot(_.name == "jcenter")},
     scalapropsVersion := Dependencies.Version.scalaprops,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
