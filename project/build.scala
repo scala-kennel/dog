@@ -22,7 +22,8 @@ object build extends Build {
   lazy val dog = module(dogName).settings(
     name := dogName,
     libraryDependencies += testInterface,
-    testFrameworks += new TestFramework("dog.DogFramework")
+    testFrameworks += new TestFramework("dog.DogFramework"),
+    parallelExecution in Test := false
   ).dependsOn(core)
 
   val root = Project("root", file(".")).settings(
