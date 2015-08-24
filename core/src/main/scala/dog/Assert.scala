@@ -1,5 +1,7 @@
 package dog
 
+import scala.util.control.NonFatal
+
 object Assert {
 
   def equal[A](expected: A, actual: A): AssertionResult[Unit] =
@@ -19,4 +21,11 @@ object Assert {
   def pred(p: Boolean): AssertionResult[Unit] =
     if(p) pass(())
     else fail("fail assertion.")
+
+  def trap[A](f: => A): AssertionResult[Throwable] = try {
+    f
+    fail(s"Expect thrown exn but not")
+  } catch {
+    case NonFatal(e) => AssertionResult.pass(e)
+  }
 }

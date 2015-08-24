@@ -52,4 +52,14 @@ object TestCaseTest extends Dog {
     Assert.equal(expected, target.run(()))
   }
 
+  val trapException = {
+    lazy val f: Int = throw new Exception("exception test")
+    val target: TestCase[Throwable] = for {
+      e <- Assert.trap(f)
+    } yield e
+    for {
+      e <- target
+      _ <- Assert.equal("exception test", e.getMessage)
+    } yield ()
+  }
 }
