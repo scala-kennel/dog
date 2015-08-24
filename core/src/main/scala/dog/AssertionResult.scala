@@ -16,12 +16,12 @@ sealed abstract class AssertionResult[A] {
     case NotPassed(c) => apply(c)
   }
 
-  def +>(a: => AssertionResult[A]): TestResult[A] = (this, a) match {
+  def +>(a: => AssertionResult[A]): TestCase[A] = TestCase((this, a) match {
     case (Passed(_), Passed(v)) => TestResult(v)
     case (Passed(_), p@NotPassed(_)) => TestResult.nel(p, List())
     case (p@NotPassed(_), Passed(_)) => TestResult.nel(p, List())
     case (p1@NotPassed(_), p2@NotPassed(_)) => TestResult.nel(p1, List(p2))
-  }
+  })
 }
 
 final case class Passed[A](value: A) extends AssertionResult[A]
