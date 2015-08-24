@@ -8,7 +8,7 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
   "TestCase" should "return value" in {
     val target = TestCase(for {
       a <- TestResult(0)
-    }yield a)
+    } yield a)
     assert(target.run(()) == TestResult(0))
   }
 
@@ -18,7 +18,7 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
     val assert2 = AssertionResult.pass(())
     val target = TestCase[Unit](for {
       a <- assert0 +> assert1 +> assert2
-    }yield a)
+    } yield a)
     assert(target.run(()) == TestResult(()))
   }
 
@@ -27,7 +27,7 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
       a <-
         Assert.equal(1, 2) +>
         Assert.equal(2, 3)
-    }yield a)
+    } yield a)
     val expected = TestResult.nel(NotPassed[Unit](Violated("expected: 1, but was: 2")), List(AssertionResult[Unit](Violated("expected: 2, but was: 3"))))
     assert(target.run(()) == expected)
   }
@@ -36,7 +36,14 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
     val target = TestCase(for {
       a <- TestResult(0)
       _ <- Assert.equal(a, 0)
-    }yield a)
+    } yield a)
     assert(target.run(()) == TestResult(0))
+  }
+
+  "TestCase" should "skip" in {
+    val target = TestCase(for {
+      a <- TestResult(0)
+    } yield a).skip("skip")
+    assert(target.run(()) == TestResult.nel(NotPassed(NotPassedCause.skip("skip")), List()))
   }
 }

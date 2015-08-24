@@ -21,4 +21,11 @@ package object dog {
 
   implicit def toTestResult[A](result: AssertionResult[A]): TestResult[A] =
     AssertionResult.toTestResult(result)
+
+  implicit class TestCaseSyntax[A] private[dog](val self: TestCase[A]) {
+
+    def skip(reason: String): TestCase[A] = TestCase(
+      Done(NonEmptyList.nel(AssertionResult[A](NotPassedCause.skip(reason)), List()))
+    )
+  }
 }
