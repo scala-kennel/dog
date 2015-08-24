@@ -13,9 +13,9 @@ class TestCaseTest extends FlatSpec with DiagrammedAssertions {
   }
 
   "Assertion" should "run multple assertion" in {
-    val assert0 = AssertionResult.pass(())
-    val assert1 = AssertionResult.pass(())
-    val assert2 = AssertionResult.pass(())
+    val assert0 = Assert.pass(())
+    val assert1 = Assert.pass(())
+    val assert2 = Assert.pass(())
     val target = TestCase[Unit](for {
       a <- assert0 +> assert1 +> assert2
     } yield a)
