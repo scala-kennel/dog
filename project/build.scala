@@ -7,6 +7,7 @@ object build extends Build {
 
   private[this] val coreName = "dog-core"
   private[this] val allName = "dog-all"
+  private[this] val dogName = "dog"
 
   private[this] def module(id: String) =
     Project(id, file(id)).settings(commonSettings)
@@ -18,6 +19,11 @@ object build extends Build {
       scalatest % "test"
     )
   )
+
+  lazy val dog = module(dogName).settings(
+    name := dogName,
+    libraryDependencies += testInterface
+  ).dependsOn(core)
 
   val root = Project("root", file(".")).settings(
     commonSettings ++
@@ -32,6 +38,6 @@ object build extends Build {
     artifacts <++= Classpaths.artifactDefs(Seq(packageDoc in Compile)),
     packagedArtifacts <++= Classpaths.packaged(Seq(packageDoc in Compile))
   ).aggregate(
-    core
+    core, dog
   )
 }
