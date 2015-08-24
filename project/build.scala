@@ -15,20 +15,21 @@ object build extends Build {
   lazy val core = module("core").settings(
     name := coreName,
     libraryDependencies ++= Seq(
-      scalaz,
-      scalatest % "test"
+      scalaz
     )
   )
 
   lazy val dog = module(dogName).settings(
     name := dogName,
-    libraryDependencies += testInterface
+    libraryDependencies += testInterface,
+    testFrameworks += new TestFramework("dog.DogFramework")
   ).dependsOn(core)
 
   val root = Project("root", file(".")).settings(
     commonSettings ++
     xerial.sbt.Sonatype.sonatypeRootSettings ++ (
       core ::
+      dog ::
       Nil
     ).map(libraryDependencies <++= libraryDependencies in _)
   ).settings(

@@ -6,7 +6,7 @@ package object dog {
 
   object TestCase {
 
-    def apply[A](result : => TestResult[A]): TestCase[A] = {
+    def apply[A](result: => TestResult[A]): TestCase[A] = {
       def body(a: Unit): TestResult[A] =
         try {
           result

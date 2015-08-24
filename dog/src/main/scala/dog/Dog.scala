@@ -1,0 +1,5 @@
+package dog
+
+trait Dog {
+
+}

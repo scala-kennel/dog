@@ -1,57 +1,55 @@
 package dog
 
-import org.scalatest.FlatSpec
-import org.scalatest.DiagrammedAssertions
+object TestCaseTest extends Dog {
 
-class TestCaseTest extends FlatSpec with DiagrammedAssertions {
-
-  "TestCase" should "return value" in {
+  val returnValue: TestCase[Unit] = {
     val target = for {
       a <- TestCase.ok(0)
     } yield a
-    assert(target.run(()) == TestResult(0))
+    Assert.equal(TestResult(0), target.run(()))
   }
 
-  "Assertion" should "convert TestCase" in {
+  val convertTestCase: TestCase[Unit] = {
     val target = for {
       a <- Assert.pass(())
     } yield a
-    assert(target.run(()) == TestResult(()))
+    Assert.equal(TestResult(()), target.run(()))
   }
 
-  "Assertion" should "run multple assertion" in {
+  val runMultpleAssertion: TestCase[Unit] = {
     val assert0 = Assert.pass(())
     val assert1 = Assert.pass(())
     val assert2 = Assert.pass(())
     val target = for {
       a <- assert0 +> assert1 +> assert2
     } yield a
-    assert(target.run(()) == TestResult(()))
+    Assert.equal(TestResult(()), target.run(()))
   }
 
-  "Assertion" should "record multiple violations" in {
+  val recordMultipleViolations: TestCase[Unit] = {
     val target = for {
       a <-
         Assert.equal(1, 2) +>
         Assert.equal(2, 3)
     } yield a
     val expected = TestResult.nel(NotPassed[Unit](Violated("expected: 1, but was: 2")), List(AssertionResult[Unit](Violated("expected: 2, but was: 3"))))
-    assert(target.run(()) == expected)
+    Assert.equal(expected, target.run(()))
   }
 
-  "TestCase" should "bind value" in {
+  val bindValue: TestCase[Unit] = {
     val target = for {
       a <- TestCase.ok(0)
       _ <- Assert.equal(a, 0)
     } yield a
-    assert(target.run(()) == TestResult(0))
+    Assert.equal(TestResult(0), target.run(()))
   }
 
-  "TestCase" should "skip" in {
+  val skipTestCase: TestCase[Unit] = {
     val target = (for {
       a <- TestCase.ok(0)
     } yield a).skip("skip")
-    assert(target.run(()) == TestResult.nel(NotPassed(NotPassedCause.skip("skip")), List()))
+    val expected = TestResult.nel(NotPassed(NotPassedCause.skip("skip")), List())
+    Assert.equal(expected, target.run(()))
   }
 
 }
