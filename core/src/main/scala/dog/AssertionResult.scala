@@ -16,11 +16,11 @@ sealed abstract class AssertionResult[A] {
     case NotPassed(c) => apply(c)
   }
 
-  def |+|(a: => AssertionResult[A]): NonEmptyList[AssertionResult[A]] = (this, a) match {
-    case (Passed(_), p@Passed(_)) => NonEmptyList.nel(p, List())
-    case (Passed(_), p@NotPassed(_)) => NonEmptyList.nel(p, List())
-    case (p@NotPassed(_), Passed(_)) => NonEmptyList.nel(p, List())
-    case (p1@NotPassed(_), p2@NotPassed(_)) => NonEmptyList.nel(p1, List(p2))
+  def +>(a: => AssertionResult[A]): TestResult[A] = (this, a) match {
+    case (Passed(_), Passed(v)) => TestResult(v)
+    case (Passed(_), p@NotPassed(_)) => TestResult.nel(p, List())
+    case (p@NotPassed(_), Passed(_)) => TestResult.nel(p, List())
+    case (p1@NotPassed(_), p2@NotPassed(_)) => TestResult.nel(p1, List(p2))
   }
 }
 

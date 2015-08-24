@@ -27,6 +27,23 @@ sealed abstract class TestResult[A] {
     }
     case Error(es, cs) => Error(es, cs)
   }
+
+  def +>(result: AssertionResult[A]): TestResult[A] = this match {
+    case Done(results) => (results.head, results.tail) match {
+      case (Passed(_), List()) => result match {
+        case Passed(v) => TestResult(v)
+        case n@NotPassed(_) => TestResult.nel(n, List())
+      }
+      case _ => result match {
+        case Passed(_) => Done(results)
+        case n@NotPassed(_) => TestResult.nel(n, results.list)
+      }
+    }
+    case Error(es, cs) => result match {
+      case Passed(_) => error(es, cs)
+      case NotPassed(c) => error(es, c :: cs)
+    }
+  }
 }
 
 

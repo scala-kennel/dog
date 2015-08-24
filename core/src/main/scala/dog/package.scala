@@ -18,4 +18,7 @@ package object dog {
   }
 
   type AssertionNel[A] = NonEmptyList[AssertionResult[A]]
+
+  implicit def toTestResult[A](result: AssertionResult[A]): TestResult[A] =
+    AssertionResult.toTestResult(result)
 }
