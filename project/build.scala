@@ -6,6 +6,7 @@ import Dependencies._
 object build extends Build {
 
   private[this] val coreName = "dog-core"
+  private[this] val genName = "dog-gen"
   private[this] val allName = "dog-all"
   private[this] val dogName = "dog"
 
@@ -19,17 +20,24 @@ object build extends Build {
     )
   )
 
+  lazy val gen = module("gen").settings(
+    name := genName,
+    libraryDependencies ++= Seq(
+      scalapropsGen
+    )
+  ).dependsOn(core)
+
   lazy val dog = module(dogName).settings(
     name := dogName,
     libraryDependencies += testInterface,
-    testFrameworks += new TestFramework("dog.DogFramework"),
-    parallelExecution in Test := false
-  ).dependsOn(core)
+    testFrameworks += new TestFramework("dog.DogFramework")
+  ).dependsOn(core, gen % "test")
 
   val root = Project("root", file(".")).settings(
     commonSettings ++
     xerial.sbt.Sonatype.sonatypeRootSettings ++ (
       core ::
+      gen ::
       dog ::
       Nil
     ).map(libraryDependencies <++= libraryDependencies in _)
@@ -40,6 +48,6 @@ object build extends Build {
     artifacts <++= Classpaths.artifactDefs(Seq(packageDoc in Compile)),
     packagedArtifacts <++= Classpaths.packaged(Seq(packageDoc in Compile))
   ).aggregate(
-    core, dog
+    core, gen, dog
   )
 }

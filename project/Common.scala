@@ -43,6 +43,7 @@ object Common {
     }.toList.flatten,
     fullResolvers ~= {_.filterNot(_.name == "jcenter")},
     scalapropsVersion := Dependencies.Version.scalaprops,
+    parallelExecution in Test := false,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
