@@ -11,4 +11,5 @@ object Dependencies {
   val scalaz = "org.scalaz" %% "scalaz-core" % Version.scalaz
   val testInterface = "org.scala-sbt" % "test-interface" % Version.testInterface
   val scalapropsGen = "com.github.scalaprops" %% "scalaprops-gen" % Version.scalaprops
+  val scalapropsCore = "com.github.scalaprops" %% "scalaprops-core" % Version.scalaprops
 }
