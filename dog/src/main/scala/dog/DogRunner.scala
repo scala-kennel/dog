@@ -67,9 +67,9 @@ final class DogRunner(
         val clazz = testClassLoader.loadClass(testClassName + "$")
         val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
         val tests = DogRunner.invokeTest(clazz, obj)
-        tests.foreach { case (name, test) =>
+        val results = tests.map { case (name, test) =>
           val selector = new TestSelector(name)
-          def event(status: Status, duration: Long, result0: Throwable \/ TestResult[Any]): Event = {
+          def event(status: Status, duration: Long, result0: Throwable \/ TestResult[Any]): DogEvent[Any] = {
             val err = result0 match {
               case -\/(e) => new OptionalThrowable(e)
               case _ => emptyThrowable
@@ -79,34 +79,41 @@ final class DogRunner(
 
           val start = System.currentTimeMillis()
           val r = try {
+            obj.listener.onStart(obj, name, test, log)
             // TODO: cancel
             val r = test.run(())
             val duration = System.currentTimeMillis() - start
+            obj.listener.onFinish(obj, name, test, r, log)
             r match {
               case Done(results) => results.list match {
                 case List(Passed(_)) =>
                   successCount.incrementAndGet()
                   event(Status.Success, duration, \/-(r))
                 case List(NotPassed(Skipped(_))) =>
-                  failureCount.incrementAndGet()
+                  ignoredCount.incrementAndGet()
                   event(Status.Ignored, duration, \/-(r))
                 case _ =>
-                  errorCount.incrementAndGet()
+                  failureCount.incrementAndGet()
                   event(Status.Failure, duration, \/-(r))
               }
-              case Error(_, _) => event(Status.Error, duration, \/-(r))
+              case Error(_, _) =>
+                errorCount.incrementAndGet()
+                event(Status.Error, duration, \/-(r))
             }
           } catch {
             case NonFatal(e) =>
               val duration = System.currentTimeMillis() - start
               log.trace(e)
+              obj.listener.onError(obj, name, e, log)
               errorCount.incrementAndGet()
               event(Status.Error, duration, -\/(e))
           } finally {
             testCount.incrementAndGet()
           }
           eventHandler.handle(r)
+          (name, r)
         }
+        obj.listener.onFinishAll(obj, results.toList, log)
         Array()
       }
 
