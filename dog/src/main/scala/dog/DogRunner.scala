@@ -1,10 +1,10 @@
 package dog
 
+import java.lang.Thread.UncaughtExceptionHandler
 import java.lang.reflect.Method
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.atomic.AtomicInteger
 import sbt.testing._
-import scala.util.control.NonFatal
-import scalaz._
 import scala.reflect.NameTransformer
 
 // port from https://github.com/scalaprops/scalaprops/blob/e6ffd8bc3d7d556e98f1ff59600d4a5c9e8dbded/scalaprops/src/main/scala/scalaprops/ScalapropsRunner.scala
@@ -64,49 +64,56 @@ final class DogRunner(
 
         val log = DogRunner.logger(loggers)
 
+        lazy val executorService: ForkJoinPool = new ForkJoinPool(
+          sys.runtime.availableProcessors(),
+          ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+          new UncaughtExceptionHandler {
+            def uncaughtException(t: Thread, e: Throwable): Unit = {
+              log.error("uncaughtException Thread = " + t)
+              log.trace(e)
+              e.printStackTrace()
+              executorService.shutdown()
+            }
+          },
+          false
+        )
+
         val clazz = testClassLoader.loadClass(testClassName + "$")
         val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
         val tests = DogRunner.invokeTest(clazz, obj)
         val results = tests.map { case (name, test) =>
           val selector = new TestSelector(name)
-          def event(status: Status, duration: Long, result0: Throwable \/ TestResult[Any]): DogEvent[Any] = {
-            val err = result0 match {
-              case -\/(e) => new OptionalThrowable(e)
-              case _ => emptyThrowable
+          def event(status: Status, duration: Long, result0: TestResult[Any]): DogEvent[Any] = {
+            val err = result0.hasError match {
+              case Some(e) => new OptionalThrowable(e)
+              case None => emptyThrowable
             }
             DogEvent(testClassName, taskdef.fingerprint(), selector, status, err, duration, result0)
           }
 
+          val param = obj.paramEndo compose Param.executorService(executorService)
           val start = System.currentTimeMillis()
           val r = try {
             obj.listener.onStart(obj, name, test, log)
-            // TODO: cancel
-            val r = test.run(obj.param)
+            val r = test.run(param)
             val duration = System.currentTimeMillis() - start
             obj.listener.onFinish(obj, name, test, r, log)
             r match {
               case Done(results) => results.list match {
                 case List(Passed(_)) =>
                   successCount.incrementAndGet()
-                  event(Status.Success, duration, \/-(r))
+                  event(Status.Success, duration, r)
                 case List(NotPassed(Skipped(_))) =>
                   ignoredCount.incrementAndGet()
-                  event(Status.Ignored, duration, \/-(r))
+                  event(Status.Ignored, duration, r)
                 case _ =>
                   failureCount.incrementAndGet()
-                  event(Status.Failure, duration, \/-(r))
+                  event(Status.Failure, duration, r)
               }
               case Error(_, _) =>
                 errorCount.incrementAndGet()
-                event(Status.Error, duration, \/-(r))
+                event(Status.Error, duration, r)
             }
-          } catch {
-            case NonFatal(e) =>
-              val duration = System.currentTimeMillis() - start
-              log.trace(e)
-              obj.listener.onError(obj, name, e, log)
-              errorCount.incrementAndGet()
-              event(Status.Error, duration, -\/(e))
           } finally {
             testCount.incrementAndGet()
           }

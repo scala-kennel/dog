@@ -1,7 +1,6 @@
 package dog
 
 import sbt.testing.Logger
-import scalaz._
 
 abstract class DogListener {
 
@@ -10,8 +9,6 @@ abstract class DogListener {
   def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger): Unit = {}
 
   def onFinishAll(obj: Dog, result: List[(String, DogEvent[Any])], logger: Logger): Unit = {}
-
-  def onError(obj: Dog, name: String, e: Throwable, logger: Logger): Unit = {}
 }
 
 object DogListener {
@@ -52,17 +49,8 @@ object DogListener {
       }
     }
 
-    override def onFinishAll(obj: Dog, results: List[(String, DogEvent[Any])], logger: Logger) = results.foreach { case (name, e) =>
-      e.result match {
-        case -\/(e) => {
-          logger.error(Console.RED + s"Error: ${name}")
-          e.printStackTrace()
-          logger.trace(e)
-          logger.error(Console.RESET)
-        }
-        case \/-(r) => resultToString(name, r, logger)
-      }
-    }
+    override def onFinishAll(obj: Dog, results: List[(String, DogEvent[Any])], logger: Logger) =
+      results.foreach { case (name, e) => resultToString(name, e.result, logger) }
 
     override def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger) = result match {
       case Done(results) => results.list match {
@@ -71,12 +59,6 @@ object DogListener {
         case x => logger.info("x")
       }
       case Error(es, cs) => logger.info("E")
-    }
-
-    override def onError(obj: Dog, name: String, e: Throwable, logger: Logger): Unit = {
-      logger.error(s"error ${obj.getClass.getCanonicalName} $name")
-      logger.trace(e)
-      e.printStackTrace()
     }
   }
 }

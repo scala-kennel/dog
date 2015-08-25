@@ -17,7 +17,7 @@ object build extends Build {
   lazy val core = module("core").settings(
     name := coreName,
     libraryDependencies ++= Seq(
-      scalaz
+      scalazConcurrent
     )
   )
 

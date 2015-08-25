@@ -44,6 +44,11 @@ sealed abstract class TestResult[A] {
       case NotPassed(c) => error(es, c :: cs)
     }
   }
+
+  def hasError: Option[Throwable] = this match {
+    case Error(e::_, _) => Some(e)
+    case _ => None
+  }
 }
 
 

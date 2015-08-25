@@ -1,8 +1,11 @@
 package dog
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+
 object TestCaseTest extends Dog {
 
-  def run[A](test: TestCase[A]) = test.run(Param.default)
+  def run[A](test: TestCase[A]) = test.run(Param.id)
 
   val returnValue: TestCase[Unit] = {
     val target = for {
@@ -63,5 +66,21 @@ object TestCaseTest extends Dog {
       e <- target
       _ <- Assert.equal("exception test", e.getMessage)
     } yield ()
+  }
+
+  def isTimeout(target: Throwable): AssertionResult[Unit] = target match {
+    case a: TimeoutException => Assert.pass(())
+    case _ => Assert.fail[Unit]("expected TimeoutException, but not")
+  }
+
+  val handleTimeout: TestCase[Unit] = {
+    val target = TestCase[Unit] {
+      Thread.sleep(100)
+      TestResult.nel(NotPassed(NotPassedCause.violate("should timeout but not")), List())
+    }.timeout(1, TimeUnit.MILLISECONDS)
+    run(target) match {
+      case Error(e::_, _) => isTimeout(e)
+      case _ => Assert.fail[Unit]("should timeout but not")
+    }
   }
 }

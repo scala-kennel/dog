@@ -1,12 +1,12 @@
 package dog
 
-import scalaz.IList
+import scalaz._
 import scalaprops._
 
 package object props {
 
-  implicit def testcase[A](implicit P: dog.Param): AsProperty[TestCase[A]] =
-    AsProperty.from (c => Property.propFromResult(c.run(P) match {
+  implicit def testcase[A](implicit E: Endo[dog.Param] = dog.Param.id): AsProperty[TestCase[A]] =
+    AsProperty.from (c => Property.propFromResult(c.run(E) match {
       case Done(results) => results.list match {
         case List(Passed(_)) => Result.Proven
         case List(NotPassed(Skipped(reason))) => Result.Ignored(reason)
@@ -18,6 +18,6 @@ package object props {
 
   implicit class TestCaseSynax[A](val self: TestCase[A]) {
 
-    def to(param: dog.Param = dog.Param.default): Property = testcase(param).asProperty(self)
+    def to(implicit E: Endo[dog.Param] = dog.Param.id): Property = testcase.asProperty(self)
   }
 }
