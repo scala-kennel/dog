@@ -81,7 +81,7 @@ final class DogRunner(
           val r = try {
             obj.listener.onStart(obj, name, test, log)
             // TODO: cancel
-            val r = test.run(())
+            val r = test.run(obj.param)
             val duration = System.currentTimeMillis() - start
             obj.listener.onFinish(obj, name, test, r, log)
             r match {

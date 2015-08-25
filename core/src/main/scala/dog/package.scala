@@ -2,12 +2,12 @@ import scalaz._
 
 package object dog {
 
-  type TestCase[A] = Kleisli[TestResult, Unit, A]
+  type TestCase[A] = Kleisli[TestResult, Param, A]
 
   object TestCase {
 
     def apply[A](result: => TestResult[A]): TestCase[A] = {
-      def body(a: Unit): TestResult[A] =
+      def body(p: Param): TestResult[A] =
         try {
           result
         } catch {
@@ -30,6 +30,6 @@ package object dog {
       Done(NonEmptyList.nel(AssertionResult[A](NotPassedCause.skip(reason)), List()))
     )
 
-    def +>(result: AssertionResult[A]): TestCase[A] = TestCase(self.run(()) +> result)
+    def +>(result: AssertionResult[A]): TestCase[A] = self.mapK(_ +> result)
   }
 }

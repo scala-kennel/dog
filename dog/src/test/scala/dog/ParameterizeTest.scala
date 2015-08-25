@@ -6,6 +6,6 @@ object ParameterizeTest extends Dog {
     val target = for {
       a <- TestCase.ok(i)
     } yield a
-    Assert.equal(TestResult(i), target.run(()))
+    Assert.equal(TestResult(i), TestCaseTest.run(target))
   })
 }
