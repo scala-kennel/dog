@@ -6,6 +6,7 @@ import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.atomic.AtomicInteger
 import sbt.testing._
 import scala.reflect.NameTransformer
+import scalaz.{-\/, \/-}
 
 // port from https://github.com/scalaprops/scalaprops/blob/e6ffd8bc3d7d556e98f1ff59600d4a5c9e8dbded/scalaprops/src/main/scala/scalaprops/ScalapropsRunner.scala
 // license: MIT
@@ -100,10 +101,10 @@ final class DogRunner(
             obj.listener.onFinish(obj, name, test, r, log)
             r match {
               case Done(results) => results.list match {
-                case List(Passed(_)) =>
+                case List(\/-(_)) =>
                   successCount.incrementAndGet()
                   event(Status.Success, duration, r)
-                case List(NotPassed(Skipped(_))) =>
+                case List(-\/(Skipped(_))) =>
                   ignoredCount.incrementAndGet()
                   event(Status.Ignored, duration, r)
                 case _ =>

@@ -1,5 +1,6 @@
 package dog
 
+import scalaz._
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -37,7 +38,7 @@ object TestCaseTest extends Dog {
         Assert.equal(1, 2) +>
         Assert.equal(2, 3)
     } yield a
-    val expected = TestResult.nel(NotPassed[Unit](Violated("expected: 1, but was: 2")), List(AssertionResult[Unit](Violated("expected: 2, but was: 3"))))
+    val expected = TestResult.nel(-\/(Violated("expected: 1, but was: 2")), List(\/.left(Violated("expected: 2, but was: 3"))))
     Assert.equal(expected, run(target))
   }
 
@@ -53,7 +54,7 @@ object TestCaseTest extends Dog {
     val target = (for {
       a <- TestCase.ok(0)
     } yield a).skip("skip")
-    val expected = TestResult.nel(NotPassed(NotPassedCause.skip("skip")), List())
+    val expected = TestResult.nel(-\/(NotPassedCause.skip("skip")), List())
     Assert.equal(expected, run(target))
   }
 
@@ -76,7 +77,7 @@ object TestCaseTest extends Dog {
   val handleTimeout: TestCase[Unit] = {
     val target = TestCase[Unit] {
       Thread.sleep(100)
-      TestResult.nel(NotPassed(NotPassedCause.violate("should timeout but not")), List())
+      TestResult.nel(-\/(NotPassedCause.violate("should timeout but not")), List())
     }.timeout(1, TimeUnit.MILLISECONDS)
     run(target) match {
       case Error(e::_, _) => isTimeout(e)

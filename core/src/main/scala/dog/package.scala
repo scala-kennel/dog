@@ -23,17 +23,44 @@ package object dog {
     def ok[A](value: A): TestCase[A] = apply(TestResult(value))
   }
 
-  type AssertionNel[A] = NonEmptyList[AssertionResult[A]]
-
   implicit def toTestCase[A](result: AssertionResult[A]): TestCase[A] =
     TestCase(AssertionResult.toTestResult(result))
 
   implicit class TestCaseSyntax[A] private[dog](val self: TestCase[A]) {
 
     def skip(reason: String): TestCase[A] = TestCase(
-      Done(NonEmptyList.nel(AssertionResult[A](NotPassedCause.skip(reason)), List()))
+      Done(NonEmptyList.nel(-\/(NotPassedCause.skip(reason)), List()))
     )
 
     def +>(result: AssertionResult[A]): TestCase[A] = self.mapK(_ +> result)
+  }
+
+  type AssertionResult[A] = NotPassedCause \/ A
+
+  type AssertionNel[A] = NonEmptyList[AssertionResult[A]]
+
+  object AssertionResult {
+
+    def onlyNotPassed[A](xs: AssertionNel[A]): List[NotPassedCause] =
+      xs.list.collect { case -\/(x) => x }
+
+    val toTestResult = new (AssertionResult ~> TestResult) {
+      def apply[A](r: AssertionResult[A]): TestResult[A] = r match {
+        case \/-(v) => TestResult(v)
+        case -\/(c) => TestResult.nel(-\/(c), List())
+      }
+    }
+  }
+
+  implicit class AssertionResultSyntax[A] private[dog](val self: AssertionResult[A]) {
+
+    def skip(reason: String): AssertionResult[A] = -\/(NotPassedCause.skip(reason))
+
+    def +>(result: => AssertionResult[A]): TestCase[A] = TestCase((self, result) match {
+      case (\/-(_), \/-(v)) => TestResult(v)
+      case (\/-(_), p @ -\/(_)) => TestResult.nel(p, List())
+      case (p @ -\/(_), \/-(_)) => TestResult.nel(p, List())
+      case (p1 @ -\/(_), p2 @ -\/(_)) => TestResult.nel(p1, List(p2))
+    })
   }
 }

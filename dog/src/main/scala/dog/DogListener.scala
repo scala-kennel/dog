@@ -1,6 +1,7 @@
 package dog
 
 import sbt.testing.Logger
+import scalaz.{-\/, \/-}
 
 abstract class DogListener {
 
@@ -21,8 +22,8 @@ object DogListener {
 
     private[this] def resultToString[A](name: String, result: TestResult[A], logger: Logger) = result match {
       case Done(results) => results.list match {
-        case List(Passed(_)) => ()
-        case List(NotPassed(Skipped(reason))) => {
+        case List(\/-(_)) => ()
+        case List(-\/(Skipped(reason))) => {
           logger.info(Console.BLUE + s"Skipped: ${name}")
           logger.info(reason + Console.RESET)
         }
@@ -54,8 +55,8 @@ object DogListener {
 
     override def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger) = result match {
       case Done(results) => results.list match {
-        case List(Passed(_)) => logger.info(".")
-        case List(NotPassed(Skipped(reason))) => logger.info("S")
+        case List(\/-(_)) => logger.info(".")
+        case List(-\/(Skipped(reason))) => logger.info("S")
         case x => logger.info("x")
       }
       case Error(es, cs) => logger.info("E")
