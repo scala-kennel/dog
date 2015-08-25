@@ -33,7 +33,7 @@ object AssertionResult {
 
   def pass[A](value: A): AssertionResult[A] = Passed(value)
 
-  def onlyNotPassed[A](xs: NonEmptyList[AssertionResult[A]]): List[NotPassedCause] =
+  def onlyNotPassed[A](xs: AssertionNel[A]): List[NotPassedCause] =
     xs.list.collect {
       case NotPassed(x) => x
     }

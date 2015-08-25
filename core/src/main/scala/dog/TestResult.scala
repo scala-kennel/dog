@@ -13,8 +13,8 @@ sealed abstract class TestResult[A] {
   }
 
   def flatMap[B](f: A => TestResult[B]): TestResult[B] = this match {
-    case Done(results) => (results.head, results.tail) match {
-      case (Passed(a), List()) =>
+    case Done(results) => results.list match {
+      case List(Passed(a)) =>
         try {
           f(a)
         } catch {
@@ -29,8 +29,8 @@ sealed abstract class TestResult[A] {
   }
 
   def +>(result: AssertionResult[A]): TestResult[A] = this match {
-    case Done(results) => (results.head, results.tail) match {
-      case (Passed(_), List()) => result match {
+    case Done(results) => results.list match {
+      case List(Passed(_)) => result match {
         case Passed(v) => TestResult(v)
         case n@NotPassed(_) => TestResult.nel(n, List())
       }
@@ -48,7 +48,7 @@ sealed abstract class TestResult[A] {
 
 
 final case class Error[A](exceptions: List[Throwable], causes: List[NotPassedCause]) extends TestResult[A]
-final case class Done[A] private[dog] (results: NonEmptyList[AssertionResult[A]]) extends TestResult[A]
+final case class Done[A] private[dog] (results: AssertionNel[A]) extends TestResult[A]
 
 object TestResult {
 
