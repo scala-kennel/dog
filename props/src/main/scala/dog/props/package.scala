@@ -1,6 +1,7 @@
 package dog
 
 import scalaz._
+import scalaz.concurrent.Task
 import scalaprops._
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.TimeoutException
@@ -35,8 +36,8 @@ package object props {
     def to: Property = assertion.asProperty(self)
   }
 
-  private[this] def checkResultToTestResult[A](result: CheckResult[A], value: A): TestResult[A] = result match {
-    case _: CheckResult.Proven | _: CheckResult.Passed => TestResult(value)
+  private[this] def checkResultToTestResult(result: CheckResult): TestResult[Unit] = result match {
+    case _: CheckResult.Proven | _: CheckResult.Passed => TestResult(())
     case _: CheckResult.Exhausted | _: CheckResult.Falsified =>
       TestResult.nel(-\/(NotPassedCause.violate(result.toString)), List())
     case e: CheckResult.GenException =>
@@ -52,18 +53,20 @@ package object props {
   implicit class PropertySyntax(val self: Property) {
 
     def toTestCase(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
-      Kleisli.kleisli((paramEndo: Endo[dog.Param]) => try {
-        val p = paramEndo(dog.Param.default)
+      Kleisli.kleisli((paramEndo: Endo[dog.Param]) => {
         val cancel = new AtomicBoolean(false)
-        checkResultToTestResult((p.executorService match {
-          case Some(s) => Task(self.check(param, cancel, count => ()))(s)
-          case None => Task(self.check(param, cancel, count => ()))
-        }).runFor(param.timeout))
-      } catch {
-        case e: TimeoutException => TestResult.error(List(e), List())
-        case e: Throwable => TestResult.error(List(e), List())
-      } finally {
-        cancel.set(true)
+        try {
+          val p = paramEndo(dog.Param.default)
+          checkResultToTestResult((p.executorService match {
+            case Some(s) => Task(self.check(param, cancel, count => ()))(s)
+            case None => Task(self.check(param, cancel, count => ()))
+          }).runFor(param.timeout))
+        } catch {
+          case e: TimeoutException => TestResult.error(List(e), List())
+          case e: Throwable => TestResult.error(List(e), List())
+        } finally {
+          cancel.set(true)
+        }
       })
   }
 }
