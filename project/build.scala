@@ -42,20 +42,7 @@ object build extends Build {
   ).dependsOn(core, gen % "test", props % "test")
 
   val root = Project("root", file(".")).settings(
-    commonSettings ++
-    xerial.sbt.Sonatype.sonatypeRootSettings ++ (
-      core ::
-      gen ::
-      props ::
-      dog ::
-      Nil
-    ).map(libraryDependencies <++= libraryDependencies in _)
-  ).settings(
-    name := allName,
-    artifacts := Nil,
-    packagedArtifacts := Map.empty,
-    artifacts <++= Classpaths.artifactDefs(Seq(packageDoc in Compile)),
-    packagedArtifacts <++= Classpaths.packaged(Seq(packageDoc in Compile))
+    commonSettings
   ).aggregate(
     core, gen, dog
   )
