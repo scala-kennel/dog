@@ -49,6 +49,23 @@ sealed abstract class TestResult[A] {
     case Error(e::_, _) => Some(e)
     case _ => None
   }
+
+  def append(result: TestResult[A]): TestResult[A] = this match {
+    case Done(results) => results.list match {
+      case List(\/-(_)) => result
+      case (r @ -\/(_)) :: rss => result match {
+        case Done(rs2) => rs2.list match {
+          case List(\/-(_)) => this
+          case _ => TestResult.nel(r, rss ++ AssertionResult.onlyNotPassed(rs2).map(-\/(_)))
+        }
+        case Error(es, cs) => error(es, AssertionResult.onlyNotPassed(results) ++ cs)
+      }
+    }
+    case Error(es1, cs1) => result match {
+      case Done(results) => error(es1, cs1 ++ AssertionResult.onlyNotPassed(results))
+      case Error(es2, cs2) => error(es1 ++ es2, cs1 ++ cs2)
+    }
+  }
 }
 
 
@@ -70,6 +87,10 @@ object TestResult {
     override def bind[A, B](fa: TestResult[A])(f: A => TestResult[B]) =
       fa.flatMap(f)
     override def map[A, B](fa: TestResult[A])(f: A => B) = fa.map(f)
+  }
+
+  implicit def semigroupInstance[A]: Semigroup[TestResult[A]] = new Semigroup[TestResult[A]] {
+    override def append(f1: TestResult[A], f2: => TestResult[A]) = f1.append(f2)
   }
 
   implicit def equalInstance[A: Equal](implicit E: Equal[Throwable]): Equal[TestResult[A]] = new Equal[TestResult[A]] {

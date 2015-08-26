@@ -8,9 +8,10 @@ object TestGen {
     Gen.asciiString.flatMap(s => Gen.oneOf(Gen.value(Skipped(s)), Gen.value(Violated(s))))
 
   implicit def testResult[A](implicit G: Gen[A], T: Gen[Throwable]): Gen[TestResult[A]] = {
+    val violated = Gen.asciiString.map(NotPassedCause.violate(_))
     lazy val error: Gen[TestResult[A]] = for {
       es <- Gen.list(T)
-      cs <- if (es.isEmpty) Gen.listOf(notPassedCause, 1) else Gen.ilist(notPassedCause)
+      cs <- if (es.isEmpty) Gen.listOf(violated, 1) else Gen.ilist(violated)
     } yield Error(es, cs.toList)
     lazy val done: Gen[TestResult[A]] =
       Gen.oneOf(

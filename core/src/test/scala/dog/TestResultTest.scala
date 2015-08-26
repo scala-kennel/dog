@@ -17,5 +17,7 @@ object TestResultTest extends Scalaprops {
 
   implicit val gen: Gen[TestResult[Int]] = TestGen.testResult[Int]
 
-  val laws = scalazlaws.monad.all[TestResult]
+  val laws1 = scalazlaws.monad.all[TestResult]
+
+  val laws2 = scalazlaws.semigroup.all[TestResult[Int]]
 }
