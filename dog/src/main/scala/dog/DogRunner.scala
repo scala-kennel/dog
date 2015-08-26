@@ -6,7 +6,7 @@ import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.atomic.AtomicInteger
 import sbt.testing._
 import scala.reflect.NameTransformer
-import scalaz.{-\/, \/-}
+import scalaz._
 
 // port from https://github.com/scalaprops/scalaprops/blob/e6ffd8bc3d7d556e98f1ff59600d4a5c9e8dbded/scalaprops/src/main/scala/scalaprops/ScalapropsRunner.scala
 // license: MIT
@@ -23,6 +23,21 @@ object DogRunner {
       val p = method.invoke(obj).asInstanceOf[TestCase[Any]]
       NameTransformer.decode(method.getName) -> p
     }.toList
+
+  private def allTests(clazz: Class[_], obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCase[Any])] = {
+    val tests = invokeTest(clazz, obj)
+    only match {
+      case Some(names) =>
+        val set = Foldable[NonEmptyList].toSet(names)
+        val actualTests: Set[String] = tests.map(_._1)(collection.breakOut)
+        set.filterNot(actualTests).foreach{ typo =>
+          logger.warn(s"""'${clazz.getCanonicalName.dropRight(1)}.$typo' does not exists""")
+        }
+        tests.filter { case (n, _) => set(n) }
+      case None =>
+        tests
+    }
+  }
 
   private def logger(loggers: Array[Logger]): Logger = new Logger {
     override def warn(msg: String): Unit =
@@ -79,9 +94,13 @@ final class DogRunner(
           false
         )
 
+        val only = scalaz.std.list.toNel(
+          args.dropWhile("--only" != _).drop(1).takeWhile(arg => !arg.startsWith("--")).toList
+        )
+
         val clazz = testClassLoader.loadClass(testClassName + "$")
         val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
-        val tests = DogRunner.invokeTest(clazz, obj)
+        val tests = DogRunner.allTests(clazz, obj, only, log)
         val results = tests.map { case (name, test) =>
           val selector = new TestSelector(name)
           def event(status: Status, duration: Long, result0: TestResult[Any]): DogEvent[Any] = {
