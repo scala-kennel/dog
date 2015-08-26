@@ -43,7 +43,9 @@ object build extends Build {
 
   val root = Project("root", file(".")).settings(
     commonSettings
+  ).settings(
+    name := allName
   ).aggregate(
-    core, gen, dog
+    core, gen, props, dog
   )
 }
