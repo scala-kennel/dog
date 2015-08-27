@@ -28,3 +28,7 @@ libraryDependencies += "com.github.pocketberserker" %% "dog-props" % "0.1.3" % "
 
 or you can use [sbt plugin](https://github.com/pocketberserker/sbt-dog)
 
+## Examples
+
+see also [dog-examples](https://github.com/pocketberserker/dog-examples)
+
