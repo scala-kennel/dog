@@ -50,23 +50,37 @@ package object props {
       TestResult.nel(-\/(NotPassedCause.skip(e.reason)), List())
   }
 
+  private[this] def checkProperty(prop: Property, param: scalaprops.Param, paramEndo: Endo[dog.Param]): TestResult[Unit] = {
+    val cancel = new AtomicBoolean(false)
+    try {
+      val p = paramEndo(dog.Param.default)
+      checkResultToTestResult((p.executorService match {
+        case Some(s) => Task(prop.check(param, cancel, count => ()))(s)
+        case None => Task(prop.check(param, cancel, count => ()))
+      }).runFor(param.timeout))
+    } catch {
+      case e: TimeoutException => TestResult.error(List(e), List())
+      case e: Throwable => TestResult.error(List(e), List())
+    } finally {
+      cancel.set(true)
+    }
+  }
+
   implicit class PropertySyntax(val self: Property) {
 
     def toTestCase(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
-      Kleisli.kleisli((paramEndo: Endo[dog.Param]) => {
-        val cancel = new AtomicBoolean(false)
-        try {
-          val p = paramEndo(dog.Param.default)
-          checkResultToTestResult((p.executorService match {
-            case Some(s) => Task(self.check(param, cancel, count => ()))(s)
-            case None => Task(self.check(param, cancel, count => ()))
-          }).runFor(param.timeout))
-        } catch {
-          case e: TimeoutException => TestResult.error(List(e), List())
-          case e: Throwable => TestResult.error(List(e), List())
-        } finally {
-          cancel.set(true)
-        }
-      })
+      Kleisli.kleisli((paramEndo: Endo[dog.Param]) => checkProperty(self, param, paramEndo))
+  }
+
+  implicit class PropertiesSyntax[A](val self: Properties[A]) {
+    import TestResult._
+
+    def toTestCase(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
+      Kleisli.kleisli((paramEndo: Endo[dog.Param]) =>
+        Tree.treeInstance.foldMap1(self.props.map { case (_, checkOpt) =>
+          checkOpt.map(c => checkProperty(c.prop, param, paramEndo))
+            .getOrElse(TestResult(()))
+        })(identity _)
+      )
   }
 }
