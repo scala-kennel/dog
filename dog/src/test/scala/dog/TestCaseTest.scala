@@ -84,4 +84,50 @@ object TestCaseTest extends Dog {
       case _ => Assert.fail[Unit]("should timeout but not")
     }
   }
+
+  val `side effect should be executed once` = {
+    var value = 0
+    val test0: TestCase[Int] = {
+      value += 1
+      Assert.pass(0)
+    }
+    val test1 = for {
+      a <- test0
+      _ <- Assert.equal(0, a)
+    } yield ()
+    val test2 = for {
+      a <- test0
+      _ <- Assert.equal(0, a)
+    } yield ()
+    val target = for {
+      a <- test1
+      b <- test2
+    } yield ()
+    val actual = run(target)
+    Assert.equal(TestResult(()), actual) +>
+    Assert.equal(1, value)
+  }
+
+  val `side effect should be executed twice` = {
+    var value = 0
+    def test0 = TestCase.delay {
+      value += 1
+      Assert.pass(0)
+    }
+    val test1 = for {
+      a <- test0
+      _ <- Assert.equal(0, a)
+    } yield ()
+    val test2 = for {
+      a <- test0
+      _ <- Assert.equal(0, a)
+    } yield ()
+    val target = for {
+      a <- test1
+      b <- test2
+    } yield ()
+    val actual = run(target)
+    Assert.equal(TestResult(()), actual) +>
+    Assert.equal(2, value)
+  }
 }

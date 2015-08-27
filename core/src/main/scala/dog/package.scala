@@ -21,6 +21,8 @@ package object dog {
       })
 
     def ok[A](value: A): TestCase[A] = apply(TestResult(value))
+
+    def delay[A](test: => TestCase[A]): TestCase[A] = test
   }
 
   implicit def toTestCase[A](result: AssertionResult[A]): TestCase[A] =
