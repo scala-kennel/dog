@@ -18,7 +18,7 @@ object TestGen {
         G.map(TestResult(_)),
         notPassedCause.flatMap(n =>
           Gen.list(Gen.disjunction[NotPassedCause, A])
-            .map(ns => TestResult.nel(scalaz.-\/(n), ns)))
+            .map(ns => TestResult.nel(scalaz.-\/(n), ns: _*)))
       )
     Gen.oneOf(error, done)
   }

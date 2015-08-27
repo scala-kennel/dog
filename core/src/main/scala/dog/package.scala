@@ -47,7 +47,7 @@ package object dog {
     val toTestResult = new (AssertionResult ~> TestResult) {
       def apply[A](r: AssertionResult[A]): TestResult[A] = r match {
         case \/-(v) => TestResult(v)
-        case -\/(c) => TestResult.nel(-\/(c), List())
+        case -\/(c) => TestResult.nel(-\/(c))
       }
     }
   }
@@ -58,9 +58,9 @@ package object dog {
 
     def +>(result: => AssertionResult[A]): TestCase[A] = TestCase((self, result) match {
       case (\/-(_), \/-(v)) => TestResult(v)
-      case (\/-(_), p @ -\/(_)) => TestResult.nel(p, List())
-      case (p @ -\/(_), \/-(_)) => TestResult.nel(p, List())
-      case (p1 @ -\/(_), p2 @ -\/(_)) => TestResult.nel(p1, List(p2))
+      case (\/-(_), p @ -\/(_)) => TestResult.nel(p)
+      case (p @ -\/(_), \/-(_)) => TestResult.nel(p)
+      case (p1 @ -\/(_), p2 @ -\/(_)) => TestResult.nel(p1, p2)
     })
   }
 }

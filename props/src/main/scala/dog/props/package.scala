@@ -39,7 +39,7 @@ package object props {
   private[this] def checkResultToTestResult(result: CheckResult): TestResult[Unit] = result match {
     case _: CheckResult.Proven | _: CheckResult.Passed => TestResult(())
     case _: CheckResult.Exhausted | _: CheckResult.Falsified =>
-      TestResult.nel(-\/(NotPassedCause.violate(result.toString)), List())
+      TestResult.nel(-\/(NotPassedCause.violate(result.toString)))
     case e: CheckResult.GenException =>
       TestResult.error(List(e.exception), List())
     case e: CheckResult.PropException =>
@@ -47,7 +47,7 @@ package object props {
     case e: CheckResult.Timeout =>
       TestResult.error(List(), List(NotPassedCause.violate(e.toString)))
     case e: CheckResult.Ignored =>
-      TestResult.nel(-\/(NotPassedCause.skip(e.reason)), List())
+      TestResult.nel(-\/(NotPassedCause.skip(e.reason)))
   }
 
   private[this] def checkProperty(prop: Property, param: scalaprops.Param, paramEndo: Endo[dog.Param]): TestResult[Unit] = {
