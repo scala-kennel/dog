@@ -14,6 +14,15 @@ object build extends Build {
   private[this] def module(id: String) =
     Project(id, file(id)).settings(commonSettings)
 
+  val modules: List[String] = (
+    coreName ::
+    genName ::
+    propsName ::
+    allName ::
+    dogName ::
+    Nil
+  )
+
   lazy val core = module("core").settings(
     name := coreName,
     libraryDependencies ++= Seq(

@@ -51,6 +51,7 @@ object Common {
       runTest,
       setReleaseVersion,
       commitReleaseVersion,
+      UpdateReadme.updateReadmeProcess,
       tagRelease,
       ReleaseStep(
         action = { state =>
@@ -61,6 +62,7 @@ object Common {
       ),
       setNextVersion,
       commitNextVersion,
+      UpdateReadme.updateReadmeProcess,
       pushChanges
     ),
     credentials ++= PartialFunction.condOpt(sys.env.get("SONATYPE_USER") -> sys.env.get("SONATYPE_PASS")){
