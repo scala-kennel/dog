@@ -13,6 +13,9 @@ import scalaz._
 // author: Kenji Yoshida <https://github.com/xuwei-k>
 object DogRunner {
 
+  def testFieldNames(clazz: Class[_]): Array[String] =
+    findTestFields(clazz, classOf[TestCase[_]]).map(_.getName)
+
   private[this] def findTestFields(clazz: Class[_], fieldType: Class[_]): Array[Method] =
     clazz.getMethods.filter(method =>
       method.getParameterTypes.length == 0 && method.getReturnType == fieldType
