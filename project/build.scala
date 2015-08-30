@@ -56,7 +56,8 @@ object build extends Build {
   val root = Project("root", file(".")).settings(
     commonSettings
   ).settings(
-    name := allName
+    name := allName,
+    packagedArtifacts := Map.empty
   ).aggregate(
     core, gen, props, dog
   )
