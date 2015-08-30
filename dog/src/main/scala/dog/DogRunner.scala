@@ -101,50 +101,54 @@ final class DogRunner(
           args.dropWhile("--only" != _).drop(1).takeWhile(arg => !arg.startsWith("--")).toList
         )
 
-        val clazz = testClassLoader.loadClass(testClassName + "$")
-        val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
-        val tests = DogRunner.allTests(clazz, obj, only, log)
-        val results = tests.map { case (name, test) =>
-          val selector = new TestSelector(name)
-          def event(status: Status, duration: Long, result0: TestResult[Any]): DogEvent[Any] = {
-            val err = result0.hasError match {
-              case Some(e) => new OptionalThrowable(e)
-              case None => emptyThrowable
-            }
-            DogEvent(testClassName, taskdef.fingerprint(), selector, status, err, duration, result0)
-          }
-
-          val param = obj.paramEndo compose Param.executorService(executorService)
-          val start = System.currentTimeMillis()
-          val r = try {
-            obj.listener.onStart(obj, name, test, log)
-            val r = test.run(param)
-            val duration = System.currentTimeMillis() - start
-            obj.listener.onFinish(obj, name, test, r, log)
-            r match {
-              case Done(results) => results.list match {
-                case List(\/-(_)) =>
-                  successCount.incrementAndGet()
-                  event(Status.Success, duration, r)
-                case List(-\/(Skipped(_))) =>
-                  ignoredCount.incrementAndGet()
-                  event(Status.Ignored, duration, r)
-                case _ =>
-                  failureCount.incrementAndGet()
-                  event(Status.Failure, duration, r)
+        try {
+          val clazz = testClassLoader.loadClass(testClassName + "$")
+          val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
+          val tests = DogRunner.allTests(clazz, obj, only, log)
+          val results = tests.map { case (name, test) =>
+            val selector = new TestSelector(name)
+            def event(status: Status, duration: Long, result0: TestResult[Any]): DogEvent[Any] = {
+              val err = result0.hasError match {
+                case Some(e) => new OptionalThrowable(e)
+                case None => emptyThrowable
               }
-              case Error(_, _) =>
-                errorCount.incrementAndGet()
-                event(Status.Error, duration, r)
+              DogEvent(testClassName, taskdef.fingerprint(), selector, status, err, duration, result0)
             }
-          } finally {
-            testCount.incrementAndGet()
+
+            val param = obj.paramEndo compose Param.executorService(executorService)
+            val start = System.currentTimeMillis()
+            val r = try {
+              obj.listener.onStart(obj, name, test, log)
+              val r = test.run(param)
+              val duration = System.currentTimeMillis() - start
+              obj.listener.onFinish(obj, name, test, r, log)
+              r match {
+                case Done(results) => results.list match {
+                  case List(\/-(_)) =>
+                    successCount.incrementAndGet()
+                    event(Status.Success, duration, r)
+                  case List(-\/(Skipped(_))) =>
+                    ignoredCount.incrementAndGet()
+                    event(Status.Ignored, duration, r)
+                  case _ =>
+                    failureCount.incrementAndGet()
+                    event(Status.Failure, duration, r)
+                }
+                case Error(_, _) =>
+                  errorCount.incrementAndGet()
+                  event(Status.Error, duration, r)
+              }
+            } finally {
+              testCount.incrementAndGet()
+            }
+            eventHandler.handle(r)
+            (name, r)
           }
-          eventHandler.handle(r)
-          (name, r)
+          obj.listener.onFinishAll(obj, results.toList, log)
+          Array()
+        } finally {
+          executorService.shutdown()
         }
-        obj.listener.onFinishAll(obj, results.toList, log)
-        Array()
       }
 
       override def tags() = Array()
