@@ -11,7 +11,7 @@ final case class Param(
 
 object Param {
 
-  val default: Param = Param()
+  private[dog] val default: Param = Param()
 
   def timeout(n: Int, timeunit: TimeUnit): Endo[Param] =
     Endo(_.copy(timeout = Duration(n, timeunit)))
