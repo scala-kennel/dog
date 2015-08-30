@@ -4,7 +4,6 @@ import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.ReleasePlugin.autoImport._
 import xerial.sbt.Sonatype._
 import com.typesafe.sbt.pgp.PgpKeys
-import scalaprops.ScalapropsPlugin.autoImport._
 
 object Common {
 
@@ -21,8 +20,7 @@ object Common {
   private[this] val scala211 = "2.11.7"
 
   lazy val commonSettings = Seq(
-    sonatypeSettings,
-    scalapropsWithScalazlaws
+    sonatypeSettings
   ).flatten ++ Seq(
     scalaVersion := scala211,
     crossScalaVersions := Seq("2.10.5", scala211),
@@ -42,8 +40,6 @@ object Common {
       case Some((2, v)) if v >= 11 => unusedWarnings
     }.toList.flatten,
     fullResolvers ~= {_.filterNot(_.name == "jcenter")},
-    scalapropsVersion := Dependencies.Version.scalaprops,
-    parallelExecution in Test := false,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,

@@ -4,8 +4,9 @@ import scalaz._
 import scalaz.std.anyVal._
 import scalaprops._
 import TestGen._
+import props._
 
-object TestResultTest extends Scalaprops {
+object TestResultTest extends Dog {
 
   import TestResult._
 
@@ -18,6 +19,8 @@ object TestResultTest extends Scalaprops {
   implicit val gen: Gen[TestResult[Int]] = TestGen.testResult[Int]
 
   val laws1 = scalazlaws.monad.all[TestResult]
+    .toTestCase()
 
   val laws2 = scalazlaws.semigroup.all[TestResult[Int]]
+    .toTestCase()
 }

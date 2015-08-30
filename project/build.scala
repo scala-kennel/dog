@@ -46,7 +46,10 @@ object build extends Build {
 
   lazy val dog = module(dogName).settings(
     name := dogName,
-    libraryDependencies += testInterface,
+    libraryDependencies ++= Seq(
+      testInterface,
+      scalapropsScalazlaws % "test"
+    ),
     testFrameworks += new TestFramework("dog.DogFramework")
   ).dependsOn(core, gen % "test", props % "test")
 
