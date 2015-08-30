@@ -1,9 +1,6 @@
 package dog
 
-import java.lang.Thread.UncaughtExceptionHandler
 import java.lang.reflect.Method
-import java.util.concurrent.ForkJoinPool
-import java.util.concurrent.atomic.AtomicInteger
 import sbt.testing._
 import scala.reflect.NameTransformer
 import scalaz._
@@ -27,7 +24,7 @@ object DogRunner {
       NameTransformer.decode(method.getName) -> p
     }.toList
 
-  private def allTests(clazz: Class[_], obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCase[Any])] = {
+  def allTests(clazz: Class[_], obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCase[Any])] = {
     val tests = invokeTest(clazz, obj)
     only match {
       case Some(names) =>
@@ -42,7 +39,7 @@ object DogRunner {
     }
   }
 
-  private def logger(loggers: Array[Logger]): Logger = new Logger {
+  private[dog] def logger(loggers: Array[Logger]): Logger = new Logger {
     override def warn(msg: String): Unit =
       loggers.foreach(_.warn(msg))
     override def error(msg: String): Unit =
@@ -64,101 +61,14 @@ final class DogRunner(
   testClassLoader: ClassLoader
 ) extends Runner {
 
-  private[this] val successCount = new AtomicInteger
-  private[this] val failureCount = new AtomicInteger
-  private[this] val errorCount = new AtomicInteger
-  private[this] val ignoredCount = new AtomicInteger
-  private[this] val testCount = new AtomicInteger
+  val tracer = new DogTracer()
 
   private[this] val taskdef2task: TaskDef => Task = { taskdef =>
-
     val testClassName = taskdef.fullyQualifiedName()
-    val emptyThrowable = new OptionalThrowable
-
-    new Task {
-
-      override def taskDef() = taskdef
-
-      override def execute(eventHandler: EventHandler, loggers: Array[Logger]) = {
-
-        val log = DogRunner.logger(loggers)
-
-        lazy val executorService: ForkJoinPool = new ForkJoinPool(
-          sys.runtime.availableProcessors(),
-          ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-          new UncaughtExceptionHandler {
-            def uncaughtException(t: Thread, e: Throwable): Unit = {
-              log.error("uncaughtException Thread = " + t)
-              log.trace(e)
-              e.printStackTrace()
-              executorService.shutdown()
-            }
-          },
-          false
-        )
-
-        val only = scalaz.std.list.toNel(
-          args.dropWhile("--only" != _).drop(1).takeWhile(arg => !arg.startsWith("--")).toList
-        )
-
-        try {
-          val clazz = testClassLoader.loadClass(testClassName + "$")
-          val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
-          val tests = DogRunner.allTests(clazz, obj, only, log)
-          val results = tests.map { case (name, test) =>
-            val selector = new TestSelector(name)
-            def event(status: Status, duration: Long, result0: TestResult[Any]): DogEvent[Any] = {
-              val err = result0.hasError match {
-                case Some(e) => new OptionalThrowable(e)
-                case None => emptyThrowable
-              }
-              DogEvent(testClassName, taskdef.fingerprint(), selector, status, err, duration, result0)
-            }
-
-            val param = obj.paramEndo compose Param.executorService(executorService)
-            val start = System.currentTimeMillis()
-            val r = try {
-              obj.listener.onStart(obj, name, test, log)
-              val r = test.run(param)
-              val duration = System.currentTimeMillis() - start
-              obj.listener.onFinish(obj, name, test, r, log)
-              r match {
-                case Done(results) => results.list match {
-                  case List(\/-(_)) =>
-                    successCount.incrementAndGet()
-                    event(Status.Success, duration, r)
-                  case List(-\/(Skipped(_))) =>
-                    ignoredCount.incrementAndGet()
-                    event(Status.Ignored, duration, r)
-                  case _ =>
-                    failureCount.incrementAndGet()
-                    event(Status.Failure, duration, r)
-                }
-                case Error(_, _) =>
-                  errorCount.incrementAndGet()
-                  event(Status.Error, duration, r)
-              }
-            } finally {
-              testCount.incrementAndGet()
-            }
-            eventHandler.handle(r)
-            (name, r)
-          }
-          obj.listener.onFinishAll(obj, results.toList, log)
-          Array()
-        } finally {
-          executorService.shutdown()
-        }
-      }
-
-      override def tags() = Array()
-    }
+    new DogTask(args, taskdef, testClassName, testClassLoader, tracer)
   }
 
   override def tasks(taskDefs: Array[TaskDef]) = taskDefs.map(taskdef2task)
 
-  override def done() = Seq(
-    s"Total test count: $testCount",
-    s"Failed $failureCount, Errors $errorCount, Passed $successCount, Ignored $ignoredCount"
-  ).map(Console.CYAN + _).mkString(sys.props("line.separator"))
+  override def done() = tracer.done
 }
