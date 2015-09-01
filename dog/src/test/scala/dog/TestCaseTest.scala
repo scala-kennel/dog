@@ -130,4 +130,12 @@ object TestCaseTest extends Dog {
     Assert.equal(TestResult(()), actual) +>
     Assert.equal(2, value)
   }
+
+  val testSetUpFixture = {
+    var value = 0
+    for {
+      _ <- TestCase.fixture(() => value += 1)
+      _ <- Assert.equal(1, value)
+    } yield ()
+  }
 }
