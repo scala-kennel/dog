@@ -9,5 +9,5 @@ class DogFramework extends Framework {
   override def fingerprints() = Array[Fingerprint](DogFingerprint)
 
   override def runner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader) =
-    new DogRunner(args, remoteArgs, testClassLoader)
+    new DogRunner(args, remoteArgs, testClassLoader, DogRunner.taskdef2task)
 }

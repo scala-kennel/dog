@@ -53,22 +53,24 @@ object DogRunner {
     override def info(msg: String): Unit =
       loggers.foreach(_.info(msg))
   }
+
+  private[dog] def taskdef2task(args: Array[String], remoteArgs: Array[String], loader: ClassLoader, tracer: DogTracer): TaskDef => Task = { taskdef =>
+    val testClassName = taskdef.fullyQualifiedName()
+    new DogTask(args, taskdef, testClassName, loader, tracer)
+  }
 }
 
 final class DogRunner(
   override val args: Array[String],
   override val remoteArgs: Array[String],
-  testClassLoader: ClassLoader
+  testClassLoader: ClassLoader,
+  taskdef2task: (Array[String], Array[String], ClassLoader, DogTracer) => (TaskDef => Task)
 ) extends Runner {
 
   val tracer = new DogTracer()
 
-  private[this] val taskdef2task: TaskDef => Task = { taskdef =>
-    val testClassName = taskdef.fullyQualifiedName()
-    new DogTask(args, taskdef, testClassName, testClassLoader, tracer)
-  }
-
-  override def tasks(taskDefs: Array[TaskDef]) = taskDefs.map(taskdef2task)
+  override def tasks(taskDefs: Array[TaskDef]) =
+    taskDefs.map(taskdef2task(args, remoteArgs, testClassLoader, tracer))
 
   override def done() = tracer.done
 }

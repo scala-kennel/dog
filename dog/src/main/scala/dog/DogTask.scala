@@ -7,12 +7,10 @@ import scalaz._
 
 private[dog] class DogTask(
   args: Array[String],
-  taskdef: TaskDef,
-  testClassName: String,
+  val taskdef: TaskDef,
+  val testClassName: String,
   testClassLoader: ClassLoader,
   tracer: DogTracer) extends Task {
-
-  val emptyThrowable = new OptionalThrowable
 
   override def taskDef() = taskdef
 
@@ -20,19 +18,7 @@ private[dog] class DogTask(
 
     val log = DogRunner.logger(loggers)
 
-    lazy val executorService: ForkJoinPool = new ForkJoinPool(
-      sys.runtime.availableProcessors(),
-      ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-      new UncaughtExceptionHandler {
-        def uncaughtException(t: Thread, e: Throwable): Unit = {
-          log.error("uncaughtException Thread = " + t)
-          log.trace(e)
-          e.printStackTrace()
-          executorService.shutdown()
-        }
-      },
-      false
-    )
+    lazy val executorService: ForkJoinPool = DogTask.createForkJoinPool(log)
 
     val only = scalaz.std.list.toNel(
       args.dropWhile("--only" != _).drop(1).takeWhile(arg => !arg.startsWith("--")).toList
@@ -44,13 +30,8 @@ private[dog] class DogTask(
       val tests = DogRunner.allTests(clazz, obj, only, log)
       val results = tests.map { case (name, test) =>
         val selector = new TestSelector(name)
-        def event(status: Status, duration: Long, result0: TestResult[Any]): DogEvent[Any] = {
-          val err = result0.hasError match {
-            case Some(e) => new OptionalThrowable(e)
-            case None => emptyThrowable
-          }
-          DogEvent(testClassName, taskdef.fingerprint(), selector, status, err, duration, result0)
-        }
+        def event(status: Status, duration: Long, result: TestResult[Any]): DogEvent[Any] =
+          DogTask.event(this, status, selector, duration, result)
 
         val param = obj.paramEndo compose Param.executorService(executorService)
         val start = System.currentTimeMillis()
@@ -89,4 +70,34 @@ private[dog] class DogTask(
   }
 
   override def tags() = Array()
+}
+
+private[dog] object DogTask {
+
+  def createForkJoinPool(log: Logger): ForkJoinPool = {
+    lazy val executorService: ForkJoinPool = new ForkJoinPool(
+      sys.runtime.availableProcessors(),
+      ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+      new UncaughtExceptionHandler {
+        def uncaughtException(t: Thread, e: Throwable): Unit = {
+          log.error("uncaughtException Thread = " + t)
+          log.trace(e)
+          e.printStackTrace()
+          executorService.shutdown()
+        }
+      },
+      false
+    )
+    executorService
+  }
+
+  private[this] val emptyThrowable = new OptionalThrowable
+
+  def event(task: DogTask, status: Status, selector: Selector, duration: Long, result: TestResult[Any]): DogEvent[Any] = {
+    val err = result.hasError match {
+      case Some(e) => new OptionalThrowable(e)
+      case None => emptyThrowable
+    }
+    DogEvent(task.testClassName, task.taskdef.fingerprint(), selector, status, err, duration, result)
+  }
 }
