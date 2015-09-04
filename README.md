@@ -32,3 +32,8 @@ or you can use [sbt plugin](https://github.com/pocketberserker/sbt-dog)
 
 see also [dog-examples](https://github.com/pocketberserker/dog-examples)
 
+## Related projects
+
+* [dog-autodoc](https://github.com/pocketberserker/dog-autodoc)
+    * Generate documentation from request-dog
+
