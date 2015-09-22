@@ -18,9 +18,9 @@ object TestResultTest extends Dog {
 
   implicit val gen: Gen[TestResult[Int]] = TestGen.testResult[Int]
 
-  val laws1 = scalazlaws.monad.all[TestResult]
-    .toTestCase()
-
-  val laws2 = scalazlaws.semigroup.all[TestResult[Int]]
-    .toTestCase()
+  val laws = Properties.list(
+    scalazlaws.monad.all[TestResult],
+    scalazlaws.semigroup.all[TestResult[Int]],
+    scalazlaws.equal.all[TestResult[Int]]
+  ).toTestCase()
 }
