@@ -30,7 +30,7 @@ package object dog {
     }
   }
 
-  implicit def toTestCase[A](result: AssertionResult[A]): TestCase[A] =
+  implicit def toTestCase[A](result: => AssertionResult[A]): TestCase[A] =
     TestCase(AssertionResult.toTestResult(result))
 
   implicit class TestCaseSyntax[A] private[dog](val self: TestCase[A]) {
