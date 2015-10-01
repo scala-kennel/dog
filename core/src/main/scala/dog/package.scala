@@ -59,6 +59,9 @@ package object dog {
     }
   }
 
+  implicit def toTestResult[A](result: => AssertionResult[A]): TestResult[A] =
+    AssertionResult.toTestResult(result)
+
   implicit class AssertionResultSyntax[A] private[dog](val self: AssertionResult[A]) {
 
     def skip(reason: String): AssertionResult[A] = -\/(NotPassedCause.skip(reason))
