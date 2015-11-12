@@ -3,8 +3,8 @@ import sbt._, Keys._
 object Dependencies {
 
   object Version {
-    val scalaz = "7.1.4"
-    val scalaprops = "0.1.14"
+    val scalaz = "7.1.5"
+    val scalaprops = "0.1.16"
     val testInterface = "1.0"
   }
 
