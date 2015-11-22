@@ -26,14 +26,14 @@ libraryDependencies += "com.github.pocketberserker" %% "dog-gen" % "0.1.5" % "te
 libraryDependencies += "com.github.pocketberserker" %% "dog-props" % "0.1.5" % "test"
 ```
 
-or you can use [sbt plugin](https://github.com/pocketberserker/sbt-dog)
+or you can use [sbt plugin](https://github.com/scala-kennel/sbt-dog)
 
 ## Examples
 
-see also [dog-examples](https://github.com/pocketberserker/dog-examples)
+see also [dog-examples](https://github.com/scala-kennel/dog-examples)
 
 ## Related projects
 
-* [dog-autodoc](https://github.com/pocketberserker/dog-autodoc)
+* [dog-autodoc](https://github.com/scala-kennel/dog-autodoc)
     * Generate documentation from request-dog
 

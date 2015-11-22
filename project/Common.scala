@@ -66,7 +66,7 @@ object Common {
         Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", user, pass)
     }.toList,
     organization := "com.github.pocketberserker",
-    homepage := Some(url("https://github.com/pocketberserker/dog")),
+    homepage := Some(url("https://github.com/scala-kennel/dog")),
     licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php")),
     pomExtra :=
       <developers>
@@ -77,8 +77,8 @@ object Common {
         </developer>
       </developers>
       <scm>
-        <url>git@github.com:pocketberserker/dog.git</url>
-        <connection>scm:git:git@github.com:pocketberserker/dog.git</connection>
+        <url>git@github.com:scala-kennel/dog.git</url>
+        <connection>scm:git:git@github.com:scala-kennel/dog.git</connection>
         <tag>{if(isSnapshot.value) gitHash else { "v" + version.value }}</tag>
       </scm>
     ,
