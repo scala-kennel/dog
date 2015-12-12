@@ -41,11 +41,11 @@ private[dog] class DogTask(
           val duration = System.currentTimeMillis() - start
           obj.listener.onFinish(obj, name, test, r, log)
           r match {
-            case Done(results) => results.list match {
-              case List(\/-(_)) =>
+            case Done(results) => results match {
+              case NonEmptyList(\/-(_), INil()) =>
                 tracer.success()
                 event(Status.Success, duration, r)
-              case List(-\/(Skipped(_))) =>
+              case NonEmptyList(-\/(Skipped(_)), INil()) =>
                 tracer.ignore()
                 event(Status.Ignored, duration, r)
               case _ =>

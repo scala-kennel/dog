@@ -1,7 +1,7 @@
 package dog
 
 import sbt.testing.Logger
-import scalaz.{-\/, \/-}
+import scalaz._
 
 abstract class DogListener {
 
@@ -21,15 +21,15 @@ object DogListener {
   class Default extends DogListener {
 
     private[this] def resultToString[A](name: String, result: TestResult[A], logger: Logger) = result match {
-      case Done(results) => results.list match {
-        case List(\/-(_)) => ()
-        case List(-\/(Skipped(reason))) => {
+      case Done(results) => results match {
+        case NonEmptyList(\/-(_), INil()) => ()
+        case NonEmptyList(-\/(Skipped(reason)), INil()) => {
           logger.info(Console.BLUE + s"Skipped: ${name}")
           logger.info(reason + Console.RESET)
         }
         case _ => {
           logger.error(Console.RED + s"NotPassed: ${name}")
-          AssertionResult.onlyNotPassed(results).zipWithIndex.foreach {
+          AssertionResult.onlyNotPassed(results).zipWithIndex.toList.foreach {
             case (c, i) => logger.error(s"${i}. ${c.toString}")
           }
           logger.error(Console.RESET)
@@ -37,11 +37,11 @@ object DogListener {
       }
       case Error(es, cs) => {
         logger.error(Console.RED + s"Error: ${name}")
-        es.foreach(e => {
+        es.toList.foreach(e => {
           e.printStackTrace()
           logger.trace(e)
         })
-        cs.zipWithIndex.foreach {
+        cs.zipWithIndex.toList.foreach {
           case (c, i) => {
             logger.error(s"${i}. ${c.toString}")
           }
@@ -54,10 +54,10 @@ object DogListener {
       results.foreach { case (name, e) => resultToString(name, e.result, logger) }
 
     override def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger) = result match {
-      case Done(results) => results.list match {
-        case List(\/-(_)) => logger.info(".")
-        case List(-\/(Skipped(reason))) => logger.info("S")
-        case x => logger.info("x")
+      case Done(results) => results match {
+        case NonEmptyList(\/-(_), INil()) => logger.info(".")
+        case NonEmptyList(-\/(Skipped(reason)), INil()) => logger.info("S")
+        case _ => logger.info("x")
       }
       case Error(es, cs) => logger.info("E")
     }

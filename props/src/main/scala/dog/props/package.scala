@@ -11,11 +11,11 @@ package object props {
   implicit def testcase[A](implicit E: Endo[dog.Param] = dog.Param.id): AsProperty[TestCase[A]] =
     AsProperty.from (c => Property.propFromResult(c.run(E) match {
       case Done(results) => results.list match {
-        case List(\/-(_)) => Result.Proven
-        case List(-\/(Skipped(reason))) => Result.Ignored(reason)
+        case ICons(\/-(_), INil()) => Result.Proven
+        case ICons(-\/(Skipped(reason)), INil()) => Result.Ignored(reason)
         case _ => Result.Falsified(IList.empty)
       }
-      case Error(e::_, _) => Result.Exception(IList.empty, e)
+      case Error(ICons(e, _), _) => Result.Exception(IList.empty, e)
       case _ => Result.Falsified(IList.empty)
     }))
 
@@ -39,15 +39,15 @@ package object props {
   private[this] def checkResultToTestResult(result: CheckResult): TestResult[Unit] = result match {
     case _: CheckResult.Proven | _: CheckResult.Passed => TestResult(())
     case _: CheckResult.Exhausted | _: CheckResult.Falsified =>
-      TestResult.nel(-\/(NotPassedCause.violate(result.toString)))
+      TestResult.nel(-\/(NotPassedCause.violate(result.toString)), IList.empty)
     case e: CheckResult.GenException =>
-      TestResult.error(List(e.exception), List())
+      TestResult.error(IList.single(e.exception), IList.empty)
     case e: CheckResult.PropException =>
-      TestResult.error(List(e.exception), List(NotPassedCause.violate(e.toString)))
+      TestResult.error(IList.single(e.exception), IList.single(NotPassedCause.violate(e.toString)))
     case e: CheckResult.Timeout =>
-      TestResult.error(List(), List(NotPassedCause.violate(e.toString)))
+      TestResult.error(IList.empty, IList.single(NotPassedCause.violate(e.toString)))
     case e: CheckResult.Ignored =>
-      TestResult.nel(-\/(NotPassedCause.skip(e.reason)))
+      TestResult.nel(-\/(NotPassedCause.skip(e.reason)), IList.empty)
   }
 
   private[this] def checkProperty(prop: Property, param: scalaprops.Param, paramEndo: Endo[dog.Param]): TestResult[Unit] = {
@@ -57,10 +57,10 @@ package object props {
       checkResultToTestResult((p.executorService match {
         case Some(s) => Task(prop.check(param, cancel, count => ()))(s)
         case None => Task(prop.check(param, cancel, count => ()))
-      }).runFor(param.timeout))
+      }).unsafePerformSyncFor(param.timeout))
     } catch {
-      case e: TimeoutException => TestResult.error(List(e), List())
-      case e: Throwable => TestResult.error(List(e), List())
+      case e: TimeoutException => TestResult.error(IList.single(e), IList.empty)
+      case e: Throwable => TestResult.error(IList.single(e), IList.empty)
     } finally {
       cancel.set(true)
     }

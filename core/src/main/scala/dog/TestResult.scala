@@ -1,7 +1,6 @@
 package dog
 
 import scalaz._
-import scalaz.std.list.listEqual
 
 sealed abstract class TestResult[A] {
 
@@ -14,15 +13,15 @@ sealed abstract class TestResult[A] {
 
   def flatMap[B](f: A => TestResult[B]): TestResult[B] = this match {
     case Done(results) => results.list match {
-      case List(\/-(a)) =>
+      case ICons(\/-(a), INil()) =>
         try {
           f(a)
         } catch {
-          case e: Throwable => error[B](List(e), List())
+          case e: Throwable => error[B](IList.single(e), IList.empty)
         }
       case _ => AssertionResult.onlyNotPassed(results) match {
-        case List() => throw new Exception("oops!")
-        case x::xs => nel(-\/(x), xs.map(\/.left[NotPassedCause, B](_)): _*)
+        case INil() => throw new Exception("oops!")
+        case ICons(x, xs) => nel(-\/(x), xs.map(\/.left[NotPassedCause, B](_)))
       }
     }
     case Error(es, cs) => Error(es, cs)
@@ -30,13 +29,13 @@ sealed abstract class TestResult[A] {
 
   def +>(result: AssertionResult[A]): TestResult[A] = this match {
     case Done(results) => results.list match {
-      case List(\/-(_)) => result match {
+      case ICons(\/-(_), INil()) => result match {
         case \/-(v) => TestResult(v)
-        case n @ -\/(_) => TestResult.nel(n)
+        case n @ -\/(_) => TestResult.nel(n, IList.empty[AssertionResult[A]])
       }
       case _ => result match {
         case \/-(_) => Done(results)
-        case n @ -\/(_) => TestResult.nel(n, results.list: _*)
+        case n @ -\/(_) => TestResult.nel(n, results.list)
       }
     }
     case Error(es, cs) => result match {
@@ -46,17 +45,17 @@ sealed abstract class TestResult[A] {
   }
 
   def hasError: Option[Throwable] = this match {
-    case Error(e::_, _) => Some(e)
+    case Error(ICons(e, _), _) => Some(e)
     case _ => None
   }
 
   def append(result: TestResult[A]): TestResult[A] = this match {
-    case Done(results) => results.list match {
-      case List(\/-(_)) => result
-      case (r @ -\/(_)) :: rss => result match {
+    case Done(results) => results match {
+      case NonEmptyList(\/-(_), INil()) => result
+      case NonEmptyList((r @ -\/(_)), rss) => result match {
         case Done(rs2) => rs2.list match {
-          case List(\/-(_)) => this
-          case _ => TestResult.nel(r, (rss ++ AssertionResult.onlyNotPassed(rs2).map(-\/(_))): _*)
+          case ICons(\/-(_), INil()) => this
+          case _ => TestResult.nel(r, (rss ++ AssertionResult.onlyNotPassed(rs2).map(-\/(_))))
         }
         case Error(es, cs) => error(es, AssertionResult.onlyNotPassed(results) ++ cs)
       }
@@ -69,17 +68,18 @@ sealed abstract class TestResult[A] {
 }
 
 
-final case class Error[A](exceptions: List[Throwable], causes: List[NotPassedCause]) extends TestResult[A]
+final case class Error[A](exceptions: IList[Throwable], causes: IList[NotPassedCause]) extends TestResult[A]
 final case class Done[A] private[dog] (results: AssertionNel[A]) extends TestResult[A]
 
 object TestResult {
 
-  def apply[A](a: A): TestResult[A] = Done(NonEmptyList.nel(\/-(a), List()))
+  def apply[A](a: A): TestResult[A] =
+    Done(NonEmptyList.nel(\/-(a), IList.empty[AssertionResult[A]]))
 
-  def nel[A](n: -\/[NotPassedCause], as: AssertionResult[A]*): TestResult[A] =
-    Done(NonEmptyList.nel(n.asInstanceOf[AssertionResult[A]], as.toList.filter(_.isLeft)))
+  def nel[A](n: -\/[NotPassedCause], as: IList[AssertionResult[A]]): TestResult[A] =
+    Done(NonEmptyList.nel(n.asInstanceOf[AssertionResult[A]], as.filter(_.isLeft)))
 
-  def error[A](es: List[Throwable], cs: List[NotPassedCause]): TestResult[A] =
+  def error[A](es: IList[Throwable], cs: IList[NotPassedCause]): TestResult[A] =
     Error[A](es, cs)
 
   implicit val monadInstance: Monad[TestResult] = new Monad[TestResult] {
@@ -99,7 +99,7 @@ object TestResult {
       case (Done(r1), Done(r2)) =>
         NonEmptyList.nonEmptyListEqual(\/.DisjunctionEqual[NotPassedCause, A]).equal(r1, r2)
       case (Error(es1, cs1), Error(es2, cs2)) =>
-        listEqual(E).equal(es1, es2) && listEqual[NotPassedCause].equal(cs1, cs2)
+        IList.equal(E).equal(es1, es2) && IList.equal[NotPassedCause].equal(cs1, cs2)
       case _ => false
     }
   }

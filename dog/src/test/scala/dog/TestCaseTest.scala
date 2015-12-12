@@ -38,7 +38,9 @@ object TestCaseTest extends Dog {
         Assert.equal(1, 2) +>
         Assert.equal(2, 3)
     } yield a
-    val expected = TestResult.nel(-\/(Violated("expected: 1, but was: 2")), \/.left(Violated("expected: 2, but was: 3")))
+    val second: IList[AssertionResult[Unit]] =
+      IList.single(\/.left(Violated("expected: 2, but was: 3")))
+    val expected = TestResult.nel(-\/(Violated("expected: 1, but was: 2")), second)
     Assert.equal(expected, run(target))
   }
 
@@ -54,7 +56,7 @@ object TestCaseTest extends Dog {
     val target = (for {
       a <- TestCase.ok(0)
     } yield a).skip("skip")
-    val expected = TestResult.nel(-\/(NotPassedCause.skip("skip")))
+    val expected = TestResult.nel(-\/(NotPassedCause.skip("skip")), IList.empty[AssertionResult[Int]])
     Assert.equal(expected, run(target))
   }
 
@@ -77,10 +79,10 @@ object TestCaseTest extends Dog {
   val handleTimeout: TestCase[Unit] = {
     val target = TestCase[Unit] {
       Thread.sleep(100)
-      TestResult.nel(-\/(NotPassedCause.violate("should timeout but not")))
+      TestResult.nel(-\/(NotPassedCause.violate("should timeout but not")), IList.empty)
     }.timeout(1, TimeUnit.MILLISECONDS)
     run(target) match {
-      case Error(e::_, _) => isTimeout(e)
+      case Error(ICons(e, _), _) => isTimeout(e)
       case _ => Assert.fail[Unit]("should timeout but not")
     }
   }
