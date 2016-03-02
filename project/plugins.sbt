@@ -13,4 +13,3 @@ scalacOptions ++= (
   Nil
 )
 
-fullResolvers ~= {_.filterNot(_.name == "jcenter")}
