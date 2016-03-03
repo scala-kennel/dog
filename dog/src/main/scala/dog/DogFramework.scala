@@ -10,4 +10,7 @@ class DogFramework extends Framework {
 
   override def runner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader) =
     new DogRunner(args, remoteArgs, testClassLoader, DogRunner.taskdef2task)
+
+  def slaveRunner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader, send: String => Unit) =
+    runner(args, remoteArgs, testClassLoader)
 }

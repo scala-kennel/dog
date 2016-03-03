@@ -9,6 +9,14 @@ scala:
 jdk:
   - oraclejdk8
 
+script:
+  - sbt ++${TRAVIS_SCALA_VERSION} "project $TEST_PROJECT" compile test:compile test
+
+env:
+  matrix:
+  - TEST_PROJECT="dogJVM"
+  - TEST_PROJECT="dogJS"
+
 cache:
   directories:
     - $HOME/.ivy2/cache

@@ -1,6 +1,4 @@
 import scalaz._
-import scalaz.concurrent.Task
-import java.util.concurrent.TimeoutException
 
 package object dog {
 
@@ -10,13 +8,11 @@ package object dog {
 
     def apply[A](result: => TestResult[A]): TestCase[A] =
       Kleisli.kleisli((paramEndo: Endo[Param]) => try {
-        val p = paramEndo(Param.default)
-        (p.executorService match {
-          case Some(s) => Task(result)(s)
-          case None => Task(result)
-        }).unsafePerformSyncFor(p.timeout)
+        // TODO: cancellation
+        // val p = paramEndo(Param.default)
+        lazy val r = result
+        r
       } catch {
-        case e: TimeoutException => TestResult.error[A](IList.single(e), IList.empty)
         case e: Throwable => TestResult.error[A](IList.single(e), IList.empty)
       })
 

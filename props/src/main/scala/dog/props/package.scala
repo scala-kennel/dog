@@ -1,9 +1,7 @@
 package dog
 
 import scalaz._
-import scalaz.concurrent.Task
 import scalaprops._
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.TimeoutException
 
 package object props {
@@ -51,18 +49,18 @@ package object props {
   }
 
   private[this] def checkProperty(prop: Property, param: scalaprops.Param, paramEndo: Endo[dog.Param]): TestResult[Unit] = {
-    val cancel = new AtomicBoolean(false)
+    var cancel = false
     try {
-      val p = paramEndo(dog.Param.default)
-      checkResultToTestResult((p.executorService match {
-        case Some(s) => Task(prop.check(param, cancel, count => ()))(s)
-        case None => Task(prop.check(param, cancel, count => ()))
-      }).unsafePerformSyncFor(param.timeout))
+      // TODO: cancellation
+      // val p = paramEndo(dog.Param.default)
+      checkResultToTestResult(
+        prop.check(param, () => cancel, count => ())
+      )
     } catch {
       case e: TimeoutException => TestResult.error(IList.single(e), IList.empty)
       case e: Throwable => TestResult.error(IList.single(e), IList.empty)
     } finally {
-      cancel.set(true)
+      cancel = true
     }
   }
 

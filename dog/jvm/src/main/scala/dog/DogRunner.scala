@@ -5,7 +5,7 @@ import sbt.testing._
 import scala.reflect.NameTransformer
 import scalaz._
 
-// port from https://github.com/scalaprops/scalaprops/blob/e6ffd8bc3d7d556e98f1ff59600d4a5c9e8dbded/scalaprops/src/main/scala/scalaprops/ScalapropsRunner.scala
+// based on https://github.com/scalaprops/scalaprops/blob/e6ffd8bc3d7d556e98f1ff59600d4a5c9e8dbded/scalaprops/src/main/scala/scalaprops/ScalapropsRunner.scala
 // license: MIT
 // author: Kenji Yoshida <https://github.com/xuwei-k>
 object DogRunner {

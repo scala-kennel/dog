@@ -1,7 +1,9 @@
 package dog
 
+import scala.scalajs.js.annotation.JSExportDescendentObjects
 import java.util.concurrent.TimeUnit
 
+@JSExportDescendentObjects
 trait Dog {
 
   def paramEndo: scalaz.Endo[Param] = Param.id
