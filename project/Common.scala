@@ -17,7 +17,7 @@ object Common {
     Nil
   )
 
-  private[this] val scala211 = "2.11.7"
+  private[this] val scala211 = "2.11.8"
 
   lazy val commonSettings = Seq(
     sonatypeSettings
