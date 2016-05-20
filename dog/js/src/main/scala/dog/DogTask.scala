@@ -62,7 +62,7 @@ private[dog] final class DogTask(
       eventHandler.handle(r)
       (name, r)
     }
-    obj.listener.onFinishAll(obj, results.toList, log)
+    obj.listener.onFinishAll(obj, results, log)
     Array()
   }
 

@@ -63,7 +63,7 @@ private[dog] class DogTask(
         eventHandler.handle(r)
         (name, r)
       }
-      obj.listener.onFinishAll(obj, results.toList, log)
+      obj.listener.onFinishAll(obj, results, log)
       Array()
     } finally {
       executorService.shutdown()
