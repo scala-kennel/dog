@@ -22,29 +22,31 @@ object DogListener {
 
   class Default extends DogListener {
 
+    private[this] def colored(color: String): String => String = color + _ + Console.RESET
+    private[this] val blue = colored(Console.BLUE)
+    private[this] val red = colored(Console.RED)
+
     private[this] def resultToString[A](name: String, result: TestResult[A], logger: Logger) = result match {
       case Done(results) => results match {
         case NonEmptyList(\/-(_), INil()) => ()
         case NonEmptyList(-\/(Skipped(reason)), INil()) =>
-          logger.info(Console.BLUE + s"Skipped: $name")
-          logger.info(reason + Console.RESET)
+          logger.info(blue(s"Skipped: $name"))
+          logger.info(blue(reason))
         case _ =>
-          logger.error(Console.RED + s"NotPassed: $name")
+          logger.error(red(s"NotPassed: $name"))
           AssertionResult.onlyNotPassed(results).zipWithIndex.toList.foreach {
-            case (c, i) => logger.error(s"$i. $c")
+            case (c, i) => logger.error(red(s"$i. $c"))
           }
-          logger.error(Console.RESET)
       }
       case Error(es, cs) =>
-        logger.error(Console.RED + s"Error: $name")
+        logger.error(red(s"Error: $name"))
         es.toList.foreach(e => {
           e.printStackTrace()
           logger.trace(e)
         })
         cs.zipWithIndex.toList.foreach {
-          case (c, i) => logger.error(s"$i. $c")
+          case (c, i) => logger.error(red(s"$i. $c"))
         }
-        logger.error(Console.RESET)
     }
 
     override def onFinishAll(obj: Dog, results: List[(String, DogEvent[Any])], logger: Logger) =
