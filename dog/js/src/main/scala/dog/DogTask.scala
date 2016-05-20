@@ -32,8 +32,8 @@ private[dog] final class DogTask(
       case _ => throw new Exception("can not find scalaporps.Scalaprops instance.")
     }
     val tests = DogRunner.allTests(obj, None, log)
+    obj.listener.onBeforeAll(obj, tests, log)
     val results = tests.map { case (name, test) =>
-
       val selector = new TestSelector(name)
       def event(status: Status, duration: Long, result: TestResult[Any]): DogEvent[Any] =
         DogTask.event(testClassName, this, status, selector, duration, result)
@@ -62,7 +62,7 @@ private[dog] final class DogTask(
       eventHandler.handle(r)
       (name, r)
     }
-    obj.listener.onFinishAll(obj, results.toList, log)
+    obj.listener.onFinishAll(obj, results, log)
     Array()
   }
 
