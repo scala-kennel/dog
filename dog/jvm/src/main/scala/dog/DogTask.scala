@@ -28,6 +28,7 @@ private[dog] class DogTask(
       val clazz = testClassLoader.loadClass(testClassName + "$")
       val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
       val tests = DogRunner.allTests(clazz, obj, only, log)
+      obj.listener.onBeforeAll(obj, tests, log)
       val results = tests.map { case (name, test) =>
         val selector = new TestSelector(name)
         def event(status: Status, duration: Long, result: TestResult[Any]): DogEvent[Any] =

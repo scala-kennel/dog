@@ -5,6 +5,8 @@ import scalaz._
 
 abstract class DogListener {
 
+  def onBeforeAll(obj: Dog, tests: List[(String, TestCase[Any])], logger: Logger): Unit = {}
+
   def onStart[A](obj: Dog, name: String, test: TestCase[A], logger: Logger): Unit = {}
 
   def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger): Unit = {}
