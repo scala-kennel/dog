@@ -27,9 +27,9 @@ private[dog] final class DogTask(
           }
         }
         else {
-          throw new Exception("FunSuite only works on objects, classes don't work.")
+          throw new Exception("Dog only works on objects, classes don't work.")
         }
-      case _ => throw new Exception("can not find scalaporps.Scalaprops instance.")
+      case _ => throw new Exception("can not find dog.Dog instance.")
     }
     val tests = DogRunner.allTests(obj, None, log)
     obj.listener.onBeforeAll(obj, tests, log)
