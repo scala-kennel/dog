@@ -7,8 +7,8 @@ object PropTest extends Dog {
 
   implicit val param = SParam.withCurrentTimeSeed()
 
-  val convertTestCase = Prop.property((i : Int) => TestCase.ok(i).to)
+  val convertTestCase = Prop.property((i : Int) => TestCase.ok(i))
 
-  val convertAssertionResult = Prop.property((i : Int) => Assert.pass(()).to)
+  val convertAssertionResult = Prop.property((i : Int) => Assert.pass(()))
 }
 

@@ -1,7 +1,7 @@
 package dog
 package props
 
-import scalaprops.{Property, Gen, Param => SParam, Shrink}
+import scalaprops.{Property, Gen, Param => SParam, Shrink, AsProperty}
 
 object Prop {
 
@@ -56,52 +56,54 @@ object Prop {
     Property.forAll[A1, A2, A3, A4, A5](f)(A1, A2, A3, A4, A5).toTestCase(param)
       .flatMapK(_ => TestResult((A1.sample(), A2.sample(), A3.sample(), A4.sample(), A5.sample())))
 
-  def property1[A1](f: A1 => Property, param: SParam = SParam.withCurrentTimeSeed())(implicit A1: Gen[A1], S1: Shrink[A1]): TestCase[A1] =
-    Property.forall0(A1, S1)(f).toTestCase(param).flatMapK(_ => TestResult(A1.sample()))
+  def property1[R, A1](f: A1 => R, param: SParam = SParam.withCurrentTimeSeed())
+    (implicit P: AsProperty[R], A1: Gen[A1], S1: Shrink[A1]): TestCase[A1] =
+    Property.forall0(A1, S1)(a => P.asProperty(f(a))).toTestCase(param).flatMapK(_ => TestResult(A1.sample()))
 
-  def property2[A1, A2](f: (A1, A2) => Property, param: SParam = SParam.withCurrentTimeSeed())
-    (implicit A1: Gen[A1], A2: Gen[A2], S1: Shrink[A1], S2: Shrink[A2]): TestCase[(A1, A2)] =
+  def property2[R, A1, A2](f: (A1, A2) => R, param: SParam = SParam.withCurrentTimeSeed())
+    (implicit P: AsProperty[R], A1: Gen[A1], A2: Gen[A2], S1: Shrink[A1], S2: Shrink[A2]): TestCase[(A1, A2)] =
     Property.forall0(A1, S1)(a1 =>
       Property.forall0(A2, S2)(a2 =>
-        f(a1, a2)
+        P.asProperty(f(a1, a2))
       )
     ).toTestCase(param).flatMapK(_ => TestResult((A1.sample(), A2.sample())))
 
-  def property3[A1, A2, A3](f: (A1, A2, A3) => Property, param: SParam = SParam.withCurrentTimeSeed())
-    (implicit A1: Gen[A1], A2: Gen[A2], A3: Gen[A3], S1: Shrink[A1], S2: Shrink[A2], S3: Shrink[A3]): TestCase[(A1, A2, A3)] =
+  def property3[R, A1, A2, A3](f: (A1, A2, A3) => R, param: SParam = SParam.withCurrentTimeSeed())
+    (implicit P: AsProperty[R], A1: Gen[A1], A2: Gen[A2], A3: Gen[A3], S1: Shrink[A1], S2: Shrink[A2], S3: Shrink[A3]): TestCase[(A1, A2, A3)] =
     Property.forall0(A1, S1)(a1 =>
       Property.forall0(A2, S2)(a2 =>
         Property.forall0(A3, S3)(a3 =>
-          f(a1, a2, a3)
+          P.asProperty(f(a1, a2, a3))
         )
       )
     ).toTestCase(param).flatMapK(_ => TestResult((A1.sample(), A2.sample(), A3.sample())))
 
-  def property[A1](f: A1 => Property)(implicit param: SParam,
+  def property[R: AsProperty, A1](f: A1 => R)(implicit param: SParam,
     A1: Gen[A1], S1: Shrink[A1]): TestCase[A1] =
-    Property.property1(f).toTestCase(param).flatMapK(_ => TestResult(A1.sample()))
+    Prop.property1(f)
 
-  def property[A1, A2](f: (A1, A2) => Property)(implicit param: SParam,
+  def property[R: AsProperty, A1, A2](f: (A1, A2) => R)(implicit param: SParam,
     A1: Gen[A1], A2: Gen[A2], S1: Shrink[A1], S2: Shrink[A2]): TestCase[(A1, A2)] =
-    Property.property2(f).toTestCase(param).flatMapK(_ => TestResult((A1.sample(), A2.sample())))
+    Prop.property2(f)
 
-  def property[A1, A2, A3](f: (A1, A2, A3) => Property)(implicit param: SParam,
+  def property[R: AsProperty, A1, A2, A3](f: (A1, A2, A3) => R)(implicit param: SParam,
     A1: Gen[A1], A2: Gen[A2], A3: Gen[A3], S1: Shrink[A1], S2: Shrink[A2], S3: Shrink[A3]): TestCase[(A1, A2, A3)] =
-    Property.property3(f).toTestCase(param).flatMapK(_ => TestResult((A1.sample(), A2.sample(), A3.sample())))
+    Prop.property3(f)
 
   object NoShrink {
-    def property1[A1](f: A1 => Property, param: SParam = SParam.withCurrentTimeSeed())
+    def property1[R: AsProperty, A1](f: A1 => Property, param: SParam = SParam.withCurrentTimeSeed())
       (implicit A1: Gen[A1], S1: Shrink[A1] = Shrink.empty[A1]): TestCase[A1] =
       Prop.property1(f, param)
 
-    def property2[A1, A2](f: (A1, A2) => Property)(implicit param: SParam,
+    def property2[R: AsProperty, A1, A2](f: (A1, A2) => Property)(implicit param: SParam,
       A1: Gen[A1], A2: Gen[A2], S1: Shrink[A1] = Shrink.empty[A1], S2: Shrink[A2] = Shrink.empty[A2]): TestCase[(A1, A2)] =
       Prop.property2(f, param)
 
-    def property3[A1, A2, A3](f: (A1, A2, A3) => Property)(implicit param: SParam,
+    def property3[R: AsProperty, A1, A2, A3](f: (A1, A2, A3) => Property)(implicit param: SParam,
       A1: Gen[A1], A2: Gen[A2], A3: Gen[A3], S1: Shrink[A1] = Shrink.empty[A1], S2: Shrink[A2] = Shrink.empty[A2], S3: Shrink[A3] = Shrink.empty[A3]): TestCase[(A1, A2, A3)] =
       Prop.property3(f, param)
   }
+
   def forAllS[A1](f: A1 => Boolean)(implicit param: SParam,
     A1: Gen[A1], S1: Shrink[A1]): TestCase[A1] =
     Property.forall0(A1, S1)(f.andThen(Property.prop))

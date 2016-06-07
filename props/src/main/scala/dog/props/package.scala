@@ -17,22 +17,12 @@ package object props {
       case _ => Result.Falsified(IList.empty)
     }))
 
-  implicit class TestCaseSynax[A](val self: TestCase[A]) {
-
-    def to(implicit E: Endo[dog.Param] = dog.Param.id): Property = testcase.asProperty(self)
-  }
-
   implicit def assertion[A]: AsProperty[AssertionResult[A]] =
     AsProperty.from(a => Property.propFromResult(a match {
       case \/-(_) => Result.Proven
       case -\/(Skipped(reason)) => Result.Ignored(reason)
       case -\/(Violated(_)) => Result.Falsified(IList.empty)
     }))
-
-  implicit class AssertionResultSynax[A](val self: AssertionResult[A]) {
-
-    def to: Property = assertion.asProperty(self)
-  }
 
   private[this] def checkResultToTestResult(result: CheckResult): TestResult[Unit] = result match {
     case _: CheckResult.Proven | _: CheckResult.Passed => TestResult(())
