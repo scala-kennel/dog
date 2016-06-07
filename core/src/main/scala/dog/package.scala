@@ -4,30 +4,40 @@ package object dog {
 
   type TestCase[A] = Kleisli[TestResult, Endo[Param], A]
 
-  object TestCase {
-
-    def apply[A](result: => TestResult[A]): TestCase[A] =
+  implicit def testResultBridge: Bridge[TestResult] = new Bridge[TestResult] {
+    override def toTestCase[A](value: => TestResult[A]) =
       Kleisli.kleisli((paramEndo: Endo[Param]) => try {
         // TODO: cancellation
         // val p = paramEndo(Param.default)
-        lazy val r = result
+        lazy val r = value
         r
       } catch {
         case e: Throwable => TestResult.error[A](IList.single(e), IList.empty)
       })
+  }
+
+  implicit def testCaseBridge: Bridge[TestCase] = new Bridge[TestCase] {
+    override def toTestCase[A](value: => TestCase[A]) = value
+  }
+
+  implicit def assertionResultBridge: Bridge[AssertionResult] = new Bridge[AssertionResult] {
+    override def toTestCase[A](value: => AssertionResult[A]) = {
+      lazy val v = value
+      testResultBridge.toTestCase(AssertionResult.toTestResult(v))
+    }
+  }
+
+  object TestCase {
+
+    def apply[F[_], A](value: => F[A])(implicit B: Bridge[F]): TestCase[A] = B.toTestCase(value)
 
     def ok[A](value: A): TestCase[A] = apply(TestResult(value))
-
-    def delay[A](test: => TestCase[A]): TestCase[A] = test
 
     def fixture(f: () => Unit): TestCase[Unit] = {
       f()
       ok(())
     }
   }
-
-  implicit def toTestCase[A](result: => AssertionResult[A]): TestCase[A] =
-    TestCase(AssertionResult.toTestResult(result))
 
   implicit class TestCaseSyntax[A](self: TestCase[A]) {
 
@@ -36,7 +46,7 @@ package object dog {
 
   implicit class TestCaseByNameSyntax[A](self: => TestCase[A]) {
 
-    def skip(reason: String): TestCase[A] = TestCase(
+    def skip(reason: String): TestCase[A] = testResultBridge.toTestCase(
       Done(NonEmptyList.nel(-\/(NotPassedCause.skip(reason)), IList.empty))
     )
   }
@@ -58,17 +68,16 @@ package object dog {
     }
   }
 
-  implicit def toTestResult[A](result: => AssertionResult[A]): TestResult[A] =
-    AssertionResult.toTestResult(result)
-
   implicit class AssertionResultSyntax[A](self: AssertionResult[A]) {
 
-    def +>(result: => AssertionResult[A]): TestCase[A] = TestCase((self, result) match {
+    def +>(result: => AssertionResult[A]): TestCase[A] = testResultBridge.toTestCase((self, result) match {
       case (\/-(_), \/-(v)) => TestResult(v)
       case (\/-(_), p @ -\/(_)) => TestResult.nel(p, IList.empty)
       case (p @ -\/(_), \/-(_)) => TestResult.nel(p, IList.empty)
       case (p1 @ -\/(_), p2 @ -\/(_)) => TestResult.nel(p1, IList.single(p2))
     })
+
+    def toTestCase: TestCase[A] = assertionResultBridge.toTestCase(self)
   }
 
   implicit class AssertionResultByNameSyntax[A](self: => AssertionResult[A]) {

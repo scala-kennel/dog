@@ -4,23 +4,21 @@ import scalaz._
 
 object TestCaseTest extends Dog {
 
-  def run[A](test: TestCase[A]) = test.run(Param.id)
+  def run[A](test: TestCase[A]): TestResult[A] = test.run(Param.id)
 
-  val returnValue: TestCase[Unit] = {
+  val returnValue = TestCase {
     val target = for {
       a <- TestCase.ok(0)
     } yield a
     Assert.equal(TestResult(0), run(target))
   }
 
-  val convertTestCase: TestCase[Unit] = {
-    val target = for {
-      a <- Assert.pass(())
-    } yield a
+  val convertTestCase = TestCase {
+    val target = TestCase { Assert.pass(()) }
     Assert.equal(TestResult(()), run(target))
   }
 
-  val runMultpleAssertion: TestCase[Unit] = {
+  val runMultpleAssertion = TestCase {
     val assert0 = Assert.pass(())
     val assert1 = Assert.pass(())
     val assert2 = Assert.pass(())
@@ -30,7 +28,7 @@ object TestCaseTest extends Dog {
     Assert.equal(TestResult(()), run(target))
   }
 
-  val recordMultipleViolations: TestCase[Unit] = {
+  val recordMultipleViolations = TestCase {
     val target = for {
       a <-
         Assert.equal(1, 2) +>
@@ -42,15 +40,15 @@ object TestCaseTest extends Dog {
     Assert.equal(expected, run(target))
   }
 
-  val bindValue: TestCase[Unit] = {
+  val bindValue = TestCase {
     val target = for {
       a <- TestCase.ok(0)
-      _ <- Assert.equal(a, 0)
+      _ <- Assert.equal(a, 0).toTestCase
     } yield a
     Assert.equal(TestResult(0), run(target))
   }
 
-  val skipTestCase: TestCase[Unit] = {
+  val skipTestCase = TestCase {
     def f: Int = throw new Exception("skip test")
     val target = (for {
       a <- TestCase.ok(f)
@@ -61,7 +59,7 @@ object TestCaseTest extends Dog {
 
   val trapException = {
     lazy val f: Int = throw new Exception("exception test")
-    val target: TestCase[Throwable] = for {
+    val target = for {
       e <- Assert.trap(f)
     } yield e
     for {
@@ -72,17 +70,17 @@ object TestCaseTest extends Dog {
 
   val `side effect should be executed once` = {
     var value = 0
-    val test0: TestCase[Int] = {
+    val test0 = TestCase {
       value += 1
       Assert.pass(0)
     }
     val test1 = for {
       a <- test0
-      _ <- Assert.equal(0, a)
+      _ <- Assert.equal(0, a).toTestCase
     } yield ()
     val test2 = for {
       a <- test0
-      _ <- Assert.equal(0, a)
+      _ <- Assert.equal(0, a).toTestCase
     } yield ()
     val target = for {
       a <- test1
@@ -95,17 +93,17 @@ object TestCaseTest extends Dog {
 
   val `side effect should be executed twice` = {
     var value = 0
-    def test0 = TestCase.delay {
+    def test0 = TestCase {
       value += 1
       Assert.pass(0)
     }
     val test1 = for {
       a <- test0
-      _ <- Assert.equal(0, a)
+      _ <- Assert.equal(0, a).toTestCase
     } yield ()
     val test2 = for {
       a <- test0
-      _ <- Assert.equal(0, a)
+      _ <- Assert.equal(0, a).toTestCase
     } yield ()
     val target = for {
       a <- test1
@@ -120,7 +118,7 @@ object TestCaseTest extends Dog {
     var value = 0
     for {
       _ <- TestCase.fixture(() => value += 1)
-      _ <- Assert.equal(1, value)
+      _ <- Assert.equal(1, value).toTestCase
     } yield ()
   }
 }
