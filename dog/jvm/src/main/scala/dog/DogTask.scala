@@ -4,6 +4,7 @@ import java.lang.Thread.UncaughtExceptionHandler
 import java.util.concurrent.ForkJoinPool
 import sbt.testing._
 import scalaz._
+import scalaz.Kleisli._
 
 private[dog] class DogTask(
   args: Array[String],
@@ -28,7 +29,7 @@ private[dog] class DogTask(
       val clazz = testClassLoader.loadClass(testClassName + "$")
       val obj = clazz.getDeclaredField("MODULE$").get(null).asInstanceOf[Dog]
       val tests = DogRunner.allTests(clazz, obj, only, log)
-      obj.listener.onBeforeAll(obj, tests, log)
+      obj.listener.onBeforeAll(obj, tests.map(_._1), log)
       val results = tests.map { case (name, test) =>
         val selector = new TestSelector(name)
         def event(status: Status, duration: Long, result: TestResult[Any]): DogEvent[Any] =
@@ -37,12 +38,14 @@ private[dog] class DogTask(
         val param = obj.paramEndo compose Param.executorService(executorService)
         val start = System.currentTimeMillis()
         val r = try {
-          obj.listener.onStart(obj, name, test, log)
-          val r = test.run(param)
+          obj.listener.onStart(obj, name, log)
+          val r = test.fold(
+            _.foldMap(obj.testCaseApRunner).run(param).toTestResult,
+            _.foldMap(obj.testCaseRunner).run(param))
           val duration = System.currentTimeMillis() - start
-          obj.listener.onFinish(obj, name, test, r, log)
+          obj.listener.onFinish(obj, name, r, log)
           r match {
-            case Done(results) => results match {
+            case TestResult.Done(results) => results match {
               case NonEmptyList(\/-(_), INil()) =>
                 tracer.success()
                 event(Status.Success, duration, r)
@@ -53,7 +56,7 @@ private[dog] class DogTask(
                 tracer.failure()
                 event(Status.Failure, duration, r)
             }
-            case Error(_, _) =>
+            case TestResult.Error(_, _) =>
               tracer.error()
               event(Status.Error, duration, r)
           }

@@ -6,9 +6,9 @@ import scalaprops._
 import TestGen._
 import props._
 
-object TestResultTest extends Dog with Assert {
+object ValidationResultTest extends Dog with Assert {
 
-  import TestResult._
+  import ValidationResult._
 
   implicit val exnEqual: Equal[Throwable] = new Equal[Throwable] {
     override def equal(a1: Throwable, a2: Throwable) = a1 == a2
@@ -16,11 +16,11 @@ object TestResultTest extends Dog with Assert {
 
   implicit val exn: Gen[Throwable] = Gen.value(new Exception())
 
-  implicit val gen: Gen[TestResult[Int]] = TestGen.testResult[Int]
+  implicit val gen: Gen[ValidationResult[Int]] = TestGen.validationResult[Int]
 
   val laws = Properties.list(
-    scalazlaws.monad.all[TestResult],
-    scalazlaws.semigroup.all[TestResult[Int]],
-    scalazlaws.equal.all[TestResult[Int]]
+    scalazlaws.applicative.all[ValidationResult],
+    scalazlaws.semigroup.all[ValidationResult[Int]],
+    scalazlaws.equal.all[ValidationResult[Int]]
   ).lift()
 }

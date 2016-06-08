@@ -1,11 +1,9 @@
 package dog
 
-object ParameterizeTest extends Dog {
+object ParameterizeTest extends Dog with Assert {
 
   val returnSampleValue = Parameterize((i: Int) => {
-    val target = for {
-      a <- TestCase.ok(i)
-    } yield a
-    Assert.equal(TestResult(i), TestCaseTest.run(target))
+    val target = pass(i)
+    equal(TestResult(i), TestCaseTest.run(target))
   })
 }

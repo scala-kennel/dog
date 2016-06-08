@@ -1,13 +1,13 @@
 package dog
 
-import scalaz.-\/
+import scalaz._
 
-object AssertionResultTest extends Dog {
+object AssertionResultTest extends Dog with Assert {
 
-  val skipAssertionResult = TestCase {
+  val skipAssertionResult = {
     def f: Int = throw new Exception("skip test")
-    val target = Assert.pass(f).skip("skip")
-    Assert.equal(-\/(Skipped("skip")), target)
+    val expected = TestResult.nel(-\/(Skipped("skip")), IList.empty[AssertionResult[Int]])
+    val actual = TestCaseTest.run(pass(f).skip("skip"))
+    equal(expected, actual)
   }
-
 }

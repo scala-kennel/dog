@@ -4,6 +4,7 @@ import org.scalajs.testinterface.TestUtils
 import sbt.testing._
 
 import scalaz._
+import scalaz.Kleisli._
 
 private[dog] final class DogTask(
   override val taskDef: TaskDef,
@@ -32,7 +33,7 @@ private[dog] final class DogTask(
       case _ => throw new Exception("can not find dog.Dog instance.")
     }
     val tests = DogRunner.allTests(obj, None, log)
-    obj.listener.onBeforeAll(obj, tests, log)
+    obj.listener.onBeforeAll(obj, tests.map(_._1), log)
     val results = tests.map { case (name, test) =>
       val selector = new TestSelector(name)
       def event(status: Status, duration: Long, result: TestResult[Any]): DogEvent[Any] =
@@ -41,12 +42,15 @@ private[dog] final class DogTask(
       val param = obj.paramEndo
       val start = System.currentTimeMillis()
       val r = try {
-        obj.listener.onStart(obj, name, test, log)
-        val r = test.run(param)
+        obj.listener.onStart(obj, name, log)
+        val r = test.fold(
+          _.foldMap(obj.testCaseApRunner).run(param).toTestResult,
+          _.foldMap(obj.testCaseRunner).run(param)
+        )
         val duration = System.currentTimeMillis() - start
-        obj.listener.onFinish(obj, name, test, r, log)
+        obj.listener.onFinish(obj, name, r, log)
         r match {
-          case Done(results) => results match {
+          case TestResult.Done(results) => results match {
             case NonEmptyList(\/-(_), INil()) =>
               event(Status.Success, duration, r)
             case NonEmptyList(-\/(Skipped(_)), INil()) =>
@@ -54,7 +58,7 @@ private[dog] final class DogTask(
             case _ =>
               event(Status.Failure, duration, r)
           }
-          case Error(_, _) =>
+          case TestResult.Error(_, _) =>
             event(Status.Error, duration, r)
         }
       } finally {

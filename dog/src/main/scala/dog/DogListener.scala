@@ -5,11 +5,11 @@ import scalaz._
 
 abstract class DogListener {
 
-  def onBeforeAll(obj: Dog, tests: List[(String, TestCase[Any])], logger: Logger): Unit = {}
+  def onBeforeAll(obj: Dog, tests: List[String], logger: Logger): Unit = {}
 
-  def onStart[A](obj: Dog, name: String, test: TestCase[A], logger: Logger): Unit = {}
+  def onStart[A](obj: Dog, name: String, logger: Logger): Unit = {}
 
-  def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger): Unit = {}
+  def onFinish[A](obj: Dog, name: String, result: TestResult[A], logger: Logger): Unit = {}
 
   def onFinishAll(obj: Dog, result: List[(String, DogEvent[Any])], logger: Logger): Unit = {}
 }
@@ -21,6 +21,8 @@ object DogListener {
   val default: DogListener = new Default
 
   class Default extends DogListener {
+
+    import TestResult._
 
     private[this] def colored(color: String): String => String = color + _ + Console.RESET
     private[this] val blue = colored(Console.BLUE)
@@ -52,7 +54,7 @@ object DogListener {
     override def onFinishAll(obj: Dog, results: List[(String, DogEvent[Any])], logger: Logger) =
       results.foreach { case (name, e) => resultToString(name, e.result, logger) }
 
-    override def onFinish[A](obj: Dog, name: String, test: TestCase[A], result: TestResult[A], logger: Logger) = result match {
+    override def onFinish[A](obj: Dog, name: String, result: TestResult[A], logger: Logger) = result match {
       case Done(results) => results match {
         case NonEmptyList(\/-(_), INil()) => logger.info(".")
         case NonEmptyList(-\/(Skipped(reason)), INil()) => logger.info("S")

@@ -5,7 +5,7 @@ import sbt.testing._
 import scala.scalajs._
 import scala.scalajs.js.WrappedDictionary
 import scala.reflect.NameTransformer
-import scalaz.{Foldable, NonEmptyList}
+import scalaz._
 
 object DogRunner {
 
@@ -16,13 +16,21 @@ object DogRunner {
       NameTransformer.decode(k).replaceAllLiterally("$1", "") -> v
     }
 
-  private def invokeTest[A](obj: js.Dictionary[A]): List[(String, TestCase[Any])] =
-    findTestFields(obj, classOf[TestCase[_]]).map{ case (k, v) =>
-      k -> v.asInstanceOf[TestCase[Any]]
+  private def invokeTestAp[A](obj: js.Dictionary[A]): List[(String, TestCasesAp[Any])] =
+    findTestFields(obj, classOf[TestCasesAp[_]]).map{ case (k, v) =>
+      k -> v.asInstanceOf[TestCasesAp[Any]]
     }.toList
 
-  def allTests(obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCase[Any])] = {
-    val tests = invokeTest(obj.asInstanceOf[js.Dictionary[_]])
+  private def invokeTest[A](obj: js.Dictionary[A]): List[(String, TestCases[Any])] =
+    findTestFields(obj, classOf[TestCases[_]]).map{ case (k, v) =>
+      k -> v.asInstanceOf[TestCases[Any]]
+    }.toList
+
+  def allTests(obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCasesAp[Any] \/ TestCases[Any])] = {
+    val d = obj.asInstanceOf[js.Dictionary[_]]
+    val tests = invokeTestAp(d).map {
+      case (name, p) => (name, -\/(p))
+    } ::: (invokeTest(d).map{ case (name, p) => (name, \/-(p)) })
     only match {
       case Some(names) =>
         val set = Foldable[NonEmptyList].toSet(names)

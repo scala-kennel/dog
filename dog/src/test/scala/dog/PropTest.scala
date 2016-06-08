@@ -3,12 +3,10 @@ package dog
 import scalaprops.{Param => SParam}
 import props._
 
-object PropTest extends Dog {
+object PropTest extends Dog with Assert {
 
   implicit val param = SParam.withCurrentTimeSeed()
 
-  val convertTestCase = Prop.property((i : Int) => TestCase.ok(i))
-
-  val convertAssertionResult = Prop.property((i : Int) => Assert.pass(()))
+  val `convert TestCase` = Prop.property((i : Int) => pass(i))
 }
 

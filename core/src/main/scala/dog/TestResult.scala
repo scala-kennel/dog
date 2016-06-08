@@ -27,23 +27,6 @@ sealed abstract class TestResult[A] {
     case Error(es, cs) => Error(es, cs)
   }
 
-  def +>(result: AssertionResult[A]): TestResult[A] = this match {
-    case Done(results) => results.list match {
-      case ICons(\/-(_), INil()) => result match {
-        case \/-(v) => TestResult(v)
-        case n @ -\/(_) => TestResult.nel(n, IList.empty[AssertionResult[A]])
-      }
-      case _ => result match {
-        case \/-(_) => Done(results)
-        case n @ -\/(_) => TestResult.nel(n, results.list)
-      }
-    }
-    case Error(es, cs) => result match {
-      case \/-(_) => error(es, cs)
-      case -\/(c) => error(es, c :: cs)
-    }
-  }
-
   def hasError: Option[Throwable] = this match {
     case Error(ICons(e, _), _) => Some(e)
     case _ => None
@@ -67,11 +50,10 @@ sealed abstract class TestResult[A] {
   }
 }
 
-
-final case class Error[A](exceptions: IList[Throwable], causes: IList[NotPassedCause]) extends TestResult[A]
-final case class Done[A] private[dog] (results: AssertionNel[A]) extends TestResult[A]
-
 object TestResult {
+
+  final case class Error[A](exceptions: IList[Throwable], causes: IList[NotPassedCause]) extends TestResult[A]
+  final case class Done[A] private[dog] (results: AssertionNel[A]) extends TestResult[A]
 
   def apply[A](a: A): TestResult[A] =
     Done(NonEmptyList.nel(\/-(a), IList.empty[AssertionResult[A]]))
