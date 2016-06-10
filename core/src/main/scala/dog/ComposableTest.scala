@@ -1,7 +1,6 @@
 package dog
 
 import scalaz._
-import scalaz.syntax.apply._
 import scala.util.control.NonFatal
 
 sealed abstract class ComposableTest[A] extends Product with Serializable
@@ -9,20 +8,27 @@ sealed abstract class ComposableTest[A] extends Product with Serializable
 object ComposableTest {
 
   final case class Fixture(f: () => Unit) extends ComposableTest[Unit]
+  final case class Gosub[A](f: () => TestCaseAp[A] \/ TestCase[A]) extends ComposableTest[A]
   final case class HandleError[A](e: Throwable) extends ComposableTest[A]
   final case class Assertion[A](assert: () => AssertionResult[A]) extends ComposableTest[A]
+
+  def assertion[A](f: () => AssertionResult[A]): ComposableTest[A] =
+    Assertion(f)
+
+  def fixture(f: () => Unit): ComposableTest[Unit] =
+    Fixture(f)
 }
 
 object TestCase {
 
   def apply[A](test: => TestCaseAp[A]): TestCaseAp[A] =
-    (FreeAp.point[ComposableTest, Unit](()) |@| test) { case (_, a) => a }
+    FreeAp.lift[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() => -\/(test))))
 
   def apply[A](test: => TestCase[A]): TestCase[A] =
-    Free.point[ComposableTest, Unit](()).flatMap(_ => test)
+    Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() => \/-(test))))
 
   def fixture(f: () => Unit): TestCase[Unit] =
-    Free.liftF(ComposableTest.Fixture(f))
+    Free.liftF[ComposableTestC, Unit](LazyTuple2(Param.id, ComposableTest.fixture(f)))
 }
 
 trait Assert {
@@ -33,21 +39,21 @@ trait Assert {
     \/.left[NotPassedCause, A](NotPassedCause.violate(reason))
 
   def equal[A](expected: A, actual: A): TestCaseAp[Unit] =
-    FreeAp.lift(Assertion(() =>
+    FreeAp.lift[ComposableTestC, Unit](LazyTuple2(Param.id, assertion(() =>
       if(expected == actual) \/-(())
       else notPassed(s"expected: ${expected.toString}, but was: ${actual.toString}")
-    ))
+    )))
 
   def eq[A](expected: A, actual: A)(implicit E: scalaz.Equal[A]): TestCaseAp[Unit] =
-    FreeAp.lift(Assertion(() =>
+    FreeAp.lift[ComposableTestC, Unit](LazyTuple2(Param.id, assertion(() =>
       if(E.equal(expected, actual)) \/-(())
       else notPassed(s"expected: ${expected.toString}, but was: ${actual.toString}")
-    ))
+    )))
 
   def pass[A](value: A): TestCaseAp[A] = FreeAp.pure(value)
 
   def fail[A](reason: String): TestCaseAp[A] =
-    FreeAp.lift(Assertion(() => notPassed(reason)))
+    FreeAp.lift[ComposableTestC, A](LazyTuple2(Param.id, assertion(() => notPassed(reason))))
 
   def pred(p: Boolean): TestCaseAp[Unit] =
     if(p) pass(())

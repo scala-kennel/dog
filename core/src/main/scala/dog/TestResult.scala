@@ -48,6 +48,11 @@ sealed abstract class TestResult[A] {
       case Error(es2, cs2) => error(es1 ++ es2, cs1 ++ cs2)
     }
   }
+
+  private[dog] def toValidationResult: ValidationResult[A] = this match {
+    case Done(results) => ValidationResult.Done(results)
+    case Error(es, cs) => ValidationResult.Error(es, cs)
+  }
 }
 
 object TestResult {

@@ -35,17 +35,17 @@ package object props {
   }
 
   private[this] def checkResultToComposableTest(result: CheckResult): ComposableTest[Unit] = result match {
-    case _: CheckResult.Proven | _: CheckResult.Passed => Assertion(() => \/-(()))
+    case _: CheckResult.Proven | _: CheckResult.Passed => assertion(() => \/-(()))
     case _: CheckResult.Exhausted | _: CheckResult.Falsified =>
-      Assertion(() => -\/(NotPassedCause.violate(result.toString)))
+      assertion(() => -\/(NotPassedCause.violate(result.toString)))
     case e: CheckResult.GenException =>
       HandleError(e.exception)
     case e: CheckResult.PropException =>
       HandleError(e.exception)
     case e: CheckResult.Timeout =>
-      Assertion(() => -\/(NotPassedCause.violate(e.toString)))
+      assertion(() => -\/(NotPassedCause.violate(e.toString)))
     case e: CheckResult.Ignored =>
-      Assertion(() => -\/(NotPassedCause.skip(e.reason)))
+      assertion(() => -\/(NotPassedCause.skip(e.reason)))
   }
 
   private[this] def checkProperty(prop: Property, param: scalaprops.Param): ComposableTest[Unit] = {
@@ -67,7 +67,7 @@ package object props {
   implicit class PropertySyntax(val self: Property) {
 
     def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
-      Free.liftF(checkProperty(self, param))
+      Free.liftF[ComposableTestC, Unit](LazyTuple2(Param.id, checkProperty(self, param)))
   }
 
   implicit class PropertiesSyntax[A](val self: Properties[A]) {
@@ -76,9 +76,8 @@ package object props {
 
     def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
       Tree.treeInstance.foldMap1(self.props.map { case (_, checkOpt) =>
-        Free.liftF(
-          checkOpt.map(c => checkProperty(c.prop, param))
-            .getOrElse(Assertion(() => \/-(())))
+        Free.liftF[ComposableTestC, Unit](LazyTuple2(Param.id, checkOpt.map(c =>
+          checkProperty(c.prop, param)).getOrElse(assertion(() => \/-(()))))
         )
       })(identity _)
   }

@@ -59,7 +59,7 @@ sealed abstract class ValidationResult[A] {
     }
   }
 
-  def toTestResult: TestResult[A] = this match {
+  private[dog] def toTestResult: TestResult[A] = this match {
     case Done(results) => TestResult.Done(results)
     case Error(es, cs) => TestResult.Error(es, cs)
   }
