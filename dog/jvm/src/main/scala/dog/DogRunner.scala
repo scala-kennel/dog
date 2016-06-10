@@ -12,8 +12,8 @@ object DogRunner {
 
   def testFieldNames(clazz: Class[_]): Array[String] =
     Array(
-      findTestFields(clazz, classOf[TestCasesAp[_]]),
-      findTestFields(clazz, classOf[TestCases[_]])
+      findTestFields(clazz, classOf[TestCaseAp[_]]),
+      findTestFields(clazz, classOf[TestCase[_]])
     ).flatten.map(_.getName)
 
   private[this] def findTestFields(clazz: Class[_], fieldType: Class[_]): Array[Method] =
@@ -21,19 +21,19 @@ object DogRunner {
       method.getParameterTypes.length == 0 && method.getReturnType == fieldType
     )
 
-  private def invokeTestAp(clazz: Class[_], obj: Dog): List[(String, TestCasesAp[Any])] =
-    findTestFields(clazz, classOf[TestCasesAp[_]]).map{ method =>
-      val p = method.invoke(obj).asInstanceOf[TestCasesAp[Any]]
+  private def invokeTestAp(clazz: Class[_], obj: Dog): List[(String, TestCaseAp[Any])] =
+    findTestFields(clazz, classOf[TestCaseAp[_]]).map{ method =>
+      val p = method.invoke(obj).asInstanceOf[TestCaseAp[Any]]
       NameTransformer.decode(method.getName) -> p
     }.toList
 
-  private def invokeTest(clazz: Class[_], obj: Dog): List[(String, TestCases[Any])] =
-    findTestFields(clazz, classOf[TestCases[_]]).map{ method =>
-      val p = method.invoke(obj).asInstanceOf[TestCases[Any]]
+  private def invokeTest(clazz: Class[_], obj: Dog): List[(String, TestCase[Any])] =
+    findTestFields(clazz, classOf[TestCase[_]]).map{ method =>
+      val p = method.invoke(obj).asInstanceOf[TestCase[Any]]
       NameTransformer.decode(method.getName) -> p
     }.toList
 
-  def allTests(clazz: Class[_], obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCasesAp[Any] \/ TestCases[Any])] = {
+  def allTests(clazz: Class[_], obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCaseAp[Any] \/ TestCase[Any])] = {
     val tests = invokeTestAp(clazz, obj).map {
       case (name, p) => (name, -\/(p))
     } ::: (invokeTest(clazz, obj).map { case (name, p) => (name, \/-(p)) })

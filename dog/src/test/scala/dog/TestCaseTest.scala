@@ -5,10 +5,10 @@ import scalaz.Kleisli._
 
 object TestCaseTest extends Dog with Assert {
 
-  def runM[A](test: TestCases[A]): TestResult[A] =
+  def runM[A](test: TestCase[A]): TestResult[A] =
     test.foldMap(testCaseRunner)(kleisliMonadReader).run(Param.id)
 
-  def run[A](test: TestCasesAp[A]): TestResult[A] =
+  def run[A](test: TestCaseAp[A]): TestResult[A] =
     test.foldMap(testCaseApRunner)(kleisliApplicative).run(Param.id).toTestResult
 
   val `return value` = TestCase {

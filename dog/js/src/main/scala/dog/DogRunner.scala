@@ -16,17 +16,17 @@ object DogRunner {
       NameTransformer.decode(k).replaceAllLiterally("$1", "") -> v
     }
 
-  private def invokeTestAp[A](obj: js.Dictionary[A]): List[(String, TestCasesAp[Any])] =
-    findTestFields(obj, classOf[TestCasesAp[_]]).map{ case (k, v) =>
-      k -> v.asInstanceOf[TestCasesAp[Any]]
+  private def invokeTestAp[A](obj: js.Dictionary[A]): List[(String, TestCaseAp[Any])] =
+    findTestFields(obj, classOf[TestCaseAp[_]]).map{ case (k, v) =>
+      k -> v.asInstanceOf[TestCaseAp[Any]]
     }.toList
 
-  private def invokeTest[A](obj: js.Dictionary[A]): List[(String, TestCases[Any])] =
-    findTestFields(obj, classOf[TestCases[_]]).map{ case (k, v) =>
-      k -> v.asInstanceOf[TestCases[Any]]
+  private def invokeTest[A](obj: js.Dictionary[A]): List[(String, TestCase[Any])] =
+    findTestFields(obj, classOf[TestCase[_]]).map{ case (k, v) =>
+      k -> v.asInstanceOf[TestCase[Any]]
     }.toList
 
-  def allTests(obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCasesAp[Any] \/ TestCases[Any])] = {
+  def allTests(obj: Dog, only: Option[NonEmptyList[String]], logger: Logger): List[(String, TestCaseAp[Any] \/ TestCase[Any])] = {
     val d = obj.asInstanceOf[js.Dictionary[_]]
     val tests = invokeTestAp(d).map {
       case (name, p) => (name, -\/(p))

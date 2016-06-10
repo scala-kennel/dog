@@ -8,7 +8,7 @@ import ComposableTest._
 
 package object props {
 
-  implicit def testcase[A](implicit R: TestCaseRunner, E: Endo[dog.Param] = dog.Param.id): AsProperty[TestCases[A]] = {
+  implicit def testcase[A](implicit R: TestCaseRunner, E: Endo[dog.Param] = dog.Param.id): AsProperty[TestCase[A]] = {
     import TestResult._
     AsProperty.from (c => Property.propFromResult(c.foldMap(R).run(E) match {
       case Done(results) => results.list match {
@@ -21,7 +21,7 @@ package object props {
     }))
   }
 
-  implicit def testcaseAp[A](implicit R: TestCaseApRunner, E: Endo[dog.Param] = dog.Param.id): AsProperty[TestCasesAp[A]] = {
+  implicit def testcaseAp[A](implicit R: TestCaseApRunner, E: Endo[dog.Param] = dog.Param.id): AsProperty[TestCaseAp[A]] = {
     import ValidationResult._
     AsProperty.from (c => Property.propFromResult(c.foldMap(R).run(E) match {
       case Done(results) => results.list match {
@@ -66,7 +66,7 @@ package object props {
 
   implicit class PropertySyntax(val self: Property) {
 
-    def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCases[Unit] =
+    def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
       Free.liftF(checkProperty(self, param))
   }
 
@@ -74,7 +74,7 @@ package object props {
     import scalaz.std.anyVal._
     import scalaz.Free._
 
-    def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCases[Unit] =
+    def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
       Tree.treeInstance.foldMap1(self.props.map { case (_, checkOpt) =>
         Free.liftF(
           checkOpt.map(c => checkProperty(c.prop, param))

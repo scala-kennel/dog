@@ -6,17 +6,17 @@ package object dog {
 
   type RunnableTestCaseV[A] = Kleisli[ValidationResult, Endo[Param], A]
 
-  type TestCasesAp[A] = FreeAp[ComposableTest, A]
+  type TestCaseAp[A] = FreeAp[ComposableTest, A]
 
-  type TestCases[A] = Free[ComposableTest, A]
+  type TestCase[A] = Free[ComposableTest, A]
 
   type TestCaseRunner = ComposableTest ~> RunnableTestCase
 
   type TestCaseApRunner = ComposableTest ~> RunnableTestCaseV
 
-  implicit class TestCasesApSyntax[A](self: => TestCasesAp[A]) {
+  implicit class TestCaseApSyntax[A](self: => TestCaseAp[A]) {
 
-    def skip(reason: String): TestCasesAp[A] =
+    def skip(reason: String): TestCaseAp[A] =
       FreeAp.lift(ComposableTest.Assertion(() => -\/(NotPassedCause.skip(reason))))
   }
 

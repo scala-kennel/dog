@@ -15,13 +15,13 @@ object ComposableTest {
 
 object TestCase {
 
-  def apply[A](test: => TestCasesAp[A]): TestCasesAp[A] =
+  def apply[A](test: => TestCaseAp[A]): TestCaseAp[A] =
     (FreeAp.point[ComposableTest, Unit](()) |@| test) { case (_, a) => a }
 
-  def apply[A](test: => TestCases[A]): TestCases[A] =
+  def apply[A](test: => TestCase[A]): TestCase[A] =
     Free.point[ComposableTest, Unit](()).flatMap(_ => test)
 
-  def fixture(f: () => Unit): TestCases[Unit] =
+  def fixture(f: () => Unit): TestCase[Unit] =
     Free.liftF(ComposableTest.Fixture(f))
 }
 
@@ -32,28 +32,28 @@ trait Assert {
   private[this] def notPassed[A](reason: String): AssertionResult[A] =
     \/.left[NotPassedCause, A](NotPassedCause.violate(reason))
 
-  def equal[A](expected: A, actual: A): TestCasesAp[Unit] =
+  def equal[A](expected: A, actual: A): TestCaseAp[Unit] =
     FreeAp.lift(Assertion(() =>
       if(expected == actual) \/-(())
       else notPassed(s"expected: ${expected.toString}, but was: ${actual.toString}")
     ))
 
-  def eq[A](expected: A, actual: A)(implicit E: scalaz.Equal[A]): TestCasesAp[Unit] =
+  def eq[A](expected: A, actual: A)(implicit E: scalaz.Equal[A]): TestCaseAp[Unit] =
     FreeAp.lift(Assertion(() =>
       if(E.equal(expected, actual)) \/-(())
       else notPassed(s"expected: ${expected.toString}, but was: ${actual.toString}")
     ))
 
-  def pass[A](value: A): TestCasesAp[A] = FreeAp.pure(value)
+  def pass[A](value: A): TestCaseAp[A] = FreeAp.pure(value)
 
-  def fail[A](reason: String): TestCasesAp[A] =
+  def fail[A](reason: String): TestCaseAp[A] =
     FreeAp.lift(Assertion(() => notPassed(reason)))
 
-  def pred(p: Boolean): TestCasesAp[Unit] =
+  def pred(p: Boolean): TestCaseAp[Unit] =
     if(p) pass(())
     else fail("fail assertion.")
 
-  def trap[A](f: => A): TestCases[Throwable] = try {
+  def trap[A](f: => A): TestCase[Throwable] = try {
     f
     fail("Expect thrown exn but not").monadic
   } catch {
