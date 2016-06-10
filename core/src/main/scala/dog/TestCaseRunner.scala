@@ -1,11 +1,12 @@
 package dog
 
 import scalaz._
+import ComposableTest._
 
 object DefaultTestCaseRunner extends TestCaseRunner {
 
   override def apply[A](fa: ComposableTest[A]) = fa match {
-    case TestCase(result) => run(result.toTestResult)
+    case HandleError(e) => run(TestResult.error(IList.single(e), IList.empty))
     case Assertion(f) => run(AssertionResult.toTestResult(f()))
     case Fixture(f) =>
       f()
@@ -26,7 +27,7 @@ object DefaultTestCaseRunner extends TestCaseRunner {
 object DefaultTestCaseApRunner extends TestCaseApRunner {
 
   override def apply[A](fa: ComposableTest[A]) = fa match {
-    case TestCase(result) => run(result)
+    case HandleError(e) => run(ValidationResult.error(IList.single(e), IList.empty))
     case Assertion(f) => run(AssertionResult.toValidationResult(f()))
     case Fixture(f) =>
       f()

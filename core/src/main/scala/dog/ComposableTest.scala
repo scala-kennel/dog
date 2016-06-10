@@ -6,9 +6,12 @@ import scala.util.control.NonFatal
 
 sealed abstract class ComposableTest[A] extends Product with Serializable
 
-final case class Fixture(f: () => Unit) extends ComposableTest[Unit]
-final case class TestCase[A](result: ValidationResult[A]) extends ComposableTest[A]
-final case class Assertion[A](assert: () => AssertionResult[A]) extends ComposableTest[A]
+object ComposableTest {
+
+  final case class Fixture(f: () => Unit) extends ComposableTest[Unit]
+  final case class HandleError[A](e: Throwable) extends ComposableTest[A]
+  final case class Assertion[A](assert: () => AssertionResult[A]) extends ComposableTest[A]
+}
 
 object TestCase {
 
@@ -19,10 +22,12 @@ object TestCase {
     Free.point[ComposableTest, Unit](()).flatMap(_ => test)
 
   def fixture(f: () => Unit): TestCases[Unit] =
-    Free.liftF(Fixture(f))
+    Free.liftF(ComposableTest.Fixture(f))
 }
 
 trait Assert {
+
+  import ComposableTest._
 
   private[this] def notPassed[A](reason: String): AssertionResult[A] =
     \/.left[NotPassedCause, A](NotPassedCause.violate(reason))

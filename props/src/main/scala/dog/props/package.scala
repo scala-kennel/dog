@@ -4,6 +4,7 @@ import scalaz._
 import scalaz.Kleisli._
 import scalaprops._
 import java.util.concurrent.TimeoutException
+import ComposableTest._
 
 package object props {
 
@@ -33,31 +34,31 @@ package object props {
     }))
   }
 
-  private[this] def checkResultToTestResult(result: CheckResult): ValidationResult[Unit] = result match {
-    case _: CheckResult.Proven | _: CheckResult.Passed => ValidationResult(())
+  private[this] def checkResultToComposableTest(result: CheckResult): ComposableTest[Unit] = result match {
+    case _: CheckResult.Proven | _: CheckResult.Passed => Assertion(() => \/-(()))
     case _: CheckResult.Exhausted | _: CheckResult.Falsified =>
-      ValidationResult.nel(-\/(NotPassedCause.violate(result.toString)), IList.empty)
+      Assertion(() => -\/(NotPassedCause.violate(result.toString)))
     case e: CheckResult.GenException =>
-      ValidationResult.error(IList.single(e.exception), IList.empty)
+      HandleError(e.exception)
     case e: CheckResult.PropException =>
-      ValidationResult.error(IList.single(e.exception), IList.single(NotPassedCause.violate(e.toString)))
+      HandleError(e.exception)
     case e: CheckResult.Timeout =>
-      ValidationResult.error(IList.empty, IList.single(NotPassedCause.violate(e.toString)))
+      Assertion(() => -\/(NotPassedCause.violate(e.toString)))
     case e: CheckResult.Ignored =>
-      ValidationResult.nel(-\/(NotPassedCause.skip(e.reason)), IList.empty)
+      Assertion(() => -\/(NotPassedCause.skip(e.reason)))
   }
 
-  private[this] def checkProperty(prop: Property, param: scalaprops.Param): ValidationResult[Unit] = {
+  private[this] def checkProperty(prop: Property, param: scalaprops.Param): ComposableTest[Unit] = {
     var cancel = false
     try {
       // TODO: cancellation
       // val p = paramEndo(dog.Param.default)
-      checkResultToTestResult(
+      checkResultToComposableTest(
         prop.check(param, () => cancel, count => ())
       )
     } catch {
-      case e: TimeoutException => ValidationResult.error(IList.single(e), IList.empty)
-      case e: Throwable => ValidationResult.error(IList.single(e), IList.empty)
+      case e: TimeoutException => HandleError(e)
+      case e: Throwable => HandleError(e)
     } finally {
       cancel = true
     }
@@ -66,18 +67,19 @@ package object props {
   implicit class PropertySyntax(val self: Property) {
 
     def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCases[Unit] =
-      Free.liftF(TestCase(checkProperty(self, param)))
+      Free.liftF(checkProperty(self, param))
   }
 
   implicit class PropertiesSyntax[A](val self: Properties[A]) {
-    import ValidationResult._
+    import scalaz.std.anyVal._
+    import scalaz.Free._
 
     def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCases[Unit] =
-      Free.liftF(TestCase(
-        Tree.treeInstance.foldMap1(self.props.map { case (_, checkOpt) =>
+      Tree.treeInstance.foldMap1(self.props.map { case (_, checkOpt) =>
+        Free.liftF(
           checkOpt.map(c => checkProperty(c.prop, param))
-            .getOrElse(ValidationResult(()))
-        })(identity _)
-      ))
+            .getOrElse(Assertion(() => \/-(())))
+        )
+      })(identity _)
   }
 }

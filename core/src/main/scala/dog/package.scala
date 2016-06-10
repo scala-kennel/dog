@@ -17,7 +17,7 @@ package object dog {
   implicit class TestCasesApSyntax[A](self: => TestCasesAp[A]) {
 
     def skip(reason: String): TestCasesAp[A] =
-      FreeAp.lift(Assertion(() => -\/(NotPassedCause.skip(reason))))
+      FreeAp.lift(ComposableTest.Assertion(() => -\/(NotPassedCause.skip(reason))))
   }
 
   type AssertionResult[A] = NotPassedCause \/ A
