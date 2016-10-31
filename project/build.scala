@@ -6,12 +6,12 @@ import org.scalajs.sbtplugin.cross.{CrossType, CrossProject}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
-object build extends Build {
+object build {
 
   private[this] val coreName = "dog-core"
   private[this] val genName = "dog-gen"
   private[this] val propsName = "dog-props"
-  private[this] val allName = "dog-all"
+  val allName = "dog-all"
   private[this] val dogName = "dog"
 
   private[this] def module(id: String) =
@@ -51,10 +51,6 @@ object build extends Build {
     )
   )
 
-  lazy val coreJS = core.js
-  lazy val coreJVM = core.jvm
-  lazy val coreRoot = project.aggregate(coreJS, coreJVM)
-
   lazy val gen = module("gen").settings(
     name := genName,
     libraryDependencies ++= Seq(
@@ -62,20 +58,12 @@ object build extends Build {
     )
   ).dependsOn(core)
 
-  lazy val genJS = gen.js
-  lazy val genJVM = gen.jvm
-  lazy val genRoot = project.aggregate(genJS, genJVM)
-
   lazy val props = module("props").settings(
     name := propsName,
     libraryDependencies ++= Seq(
       "com.github.scalaprops" %%% "scalaprops-core" % Version.scalaprops
     )
   ).dependsOn(core)
-
-  lazy val propsJS = props.js
-  lazy val propsJVM = props.jvm
-  lazy val propsRoot = project.aggregate(propsJS, propsJVM)
 
   lazy val dog = module(dogName).settings(
     name := dogName,
@@ -96,27 +84,4 @@ object build extends Build {
       "org.scala-js" %% "scalajs-test-interface" % scalaJSVersion
     )
   )
-
-  lazy val dogJS = dog.js
-  lazy val dogJVM = dog.jvm
-  lazy val dogRoot = project.aggregate(dogJS, dogJVM)
-
-  private[this] lazy val jvmProjects = Seq[ProjectReference](
-    coreJVM, genJVM, propsJVM, dogJVM
-  )
-  private[this] lazy val jsProjects = Seq[ProjectReference](
-    coreJS, genJS, propsJS, dogJS
-  )
-
-  val root = Project("root", file(".")).settings(
-    commonSettings
-  ).settings(
-    name := allName,
-    packagedArtifacts := Map.empty
-  ).aggregate(
-    jvmProjects ++ jsProjects : _*
-  )
-
-  lazy val rootJS = project.aggregate(jsProjects: _*)
-  lazy val rootJVM = project.aggregate(jvmProjects: _*)
 }
