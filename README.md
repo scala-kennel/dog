@@ -15,15 +15,15 @@ This framework is inspired by [Persimmon](https://github.com/persimmon-projects/
 ```scala
 testFrameworks += new TestFramework("dog.DogFramework")
 
-libraryDependencies += "com.github.pocketberserker" %% "dog" % "0.3.0" % "test"
+libraryDependencies += "com.github.pocketberserker" %% "dog" % "0.4.0" % "test"
 ```
 
 ```scala
-libraryDependencies += "com.github.pocketberserker" %% "dog-gen" % "0.3.0" % "test"
+libraryDependencies += "com.github.pocketberserker" %% "dog-gen" % "0.4.0" % "test"
 ```
 
 ```scala
-libraryDependencies += "com.github.pocketberserker" %% "dog-props" % "0.3.0" % "test"
+libraryDependencies += "com.github.pocketberserker" %% "dog-props" % "0.4.0" % "test"
 ```
 
 or you can use [sbt plugin](https://github.com/scala-kennel/sbt-dog)
