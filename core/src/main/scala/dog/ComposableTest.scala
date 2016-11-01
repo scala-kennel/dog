@@ -21,11 +21,15 @@ object ComposableTest {
 
 object TestCase {
 
-  def apply[A](test: => TestCaseAp[A]): TestCaseAp[A] =
-    FreeAp.lift[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() => -\/(test))))
+  def apply[A](test: => TestCaseAp[A]): TestCaseAp[A] = {
+    lazy val t = test
+    FreeAp.lift[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() => -\/(t))))
+  }
 
-  def apply[A](test: => TestCase[A]): TestCase[A] =
-    Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() => \/-(test))))
+  def apply[A](test: => TestCase[A]): TestCase[A] = {
+    lazy val t = test
+    Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() => \/-(t))))
+  }
 
   def fixture(f: () => Unit): TestCase[Unit] =
     Free.liftF[ComposableTestC, Unit](LazyTuple2(Param.id, ComposableTest.fixture(f)))

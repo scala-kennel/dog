@@ -62,50 +62,34 @@ object TestCaseTest extends Dog with Assert {
 
   val `side effect should be executed once` = TestCase {
     var value = 0
-    val test0 = {
+    val test0 = TestCase {
       value += 1
-      pass(0)
+      pass(value)
     }
-    val test1 = for {
-      a <- test0.monadic
-      _ <- equal(0, a).monadic
-    } yield ()
-    val test2 = for {
-      a <- test0.monadic
-      _ <- equal(0, a).monadic
-    } yield ()
     val target = for {
-      _ <- test1
-      _ <- test2
-    } yield ()
+      a <- test0.monadic
+      b <- test0.monadic
+    } yield (a + b)
     val actual = runM(target)
     Assertion2(
-      equal(TestResult(()), actual),
+      equal(TestResult(2), actual),
       equal(1, value)
     )
   }
 
   val `side effect should be executed twice` = TestCase {
     var value = 0
-    def test0 = {
+    def test0() = TestCase {
       value += 1
-      pass(0)
+      pass(value)
     }
-    val test1 = for {
-      a <- test0.monadic
-      _ <- equal(0, a).monadic
-    } yield ()
-    val test2 = for {
-      a <- test0.monadic
-      _ <- equal(0, a).monadic
-    } yield ()
     val target = for {
-      a <- test1
-      b <- test2
-    } yield ()
+      a <- test0().monadic
+      b <- test0().monadic
+    } yield (a + b)
     val actual = runM(target)
     Assertion2(
-      equal(TestResult(()), actual),
+      equal(TestResult(3), actual),
       equal(2, value)
     )
   }

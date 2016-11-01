@@ -2,8 +2,6 @@ package dog
 
 import scalaz._
 import scalaz.Kleisli._
-import scalaz.concurrent.Task
-import java.util.concurrent.TimeoutException
 import ComposableTest._
 
 object DefaultTestCaseRunner extends TestCaseRunner {
@@ -12,12 +10,8 @@ object DefaultTestCaseRunner extends TestCaseRunner {
     Kleisli.kleisli((paramEndo: Config) => try {
       val config: Config = fa._1.compose(paramEndo)
       val p = config(Param.default)
-      (p.executorService match {
-        case Some(s) => Task(eval(config, fa))(s)
-        case None => Task(eval(config, fa))
-      }).unsafePerformSyncFor(p.timeout)
+      p.executor.execute(p.timeout)(eval(config, fa))
     } catch {
-      case e: TimeoutException => TestResult.error(IList.single(e), IList.empty)
       case e: Throwable => TestResult.error[A](IList.single(e), IList.empty)
     })
 
@@ -41,12 +35,8 @@ object DefaultTestCaseApRunner extends TestCaseApRunner {
     Kleisli.kleisli((paramEndo: Config) => try {
       val config: Config = fa._1.compose(paramEndo)
       val p = config(Param.default)
-      (p.executorService match {
-        case Some(s) => Task(eval(config, fa))(s)
-        case None => Task(eval(config, fa))
-      }).unsafePerformSyncFor(p.timeout)
+      p.executor.execute(p.timeout)(eval(config, fa))
     } catch {
-      case e: TimeoutException => ValidationResult.error(IList.single(e), IList.empty)
       case e: Throwable => ValidationResult.error[A](IList.single(e), IList.empty)
     })
 
