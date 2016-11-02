@@ -76,7 +76,6 @@ object build {
   ).jvmSettings(
     libraryDependencies ++= Seq(
       testInterface,
-      "org.scalaz" %%% "scalaz-concurrent" % Version.scalaz,
       "org.scala-js" %% "scalajs-stubs" % scalaJSVersion % "provided"
     )
   ).jsSettings(
