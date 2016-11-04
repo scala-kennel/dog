@@ -17,19 +17,18 @@ object TestCaseTest extends Dog with Assert {
   }
 
   val `run multple Assertion` = TestCase {
-    val target = Assertion3(
-      pass(()),
-      pass(()),
-      pass(())
-    )
+    val target =
+      assert
+        .pass(())
+        .pass(())
     equal(TestResult(()), run(target))
   }
 
   val `record multiple violations` = TestCase {
-    val target = Assertion2(
-      equal(1, 2),
-      equal(2, 3)
-    )
+    val target =
+      assert
+        .equal(1, 2)
+        .equal(2, 3)
     val second: IList[AssertionResult[Unit]] =
       IList.single(\/.left(Violated("expected: 2, but was: 3")))
     val expected = TestResult.nel(-\/(Violated("expected: 1, but was: 2")), second)
@@ -71,10 +70,9 @@ object TestCaseTest extends Dog with Assert {
       b <- test0.monadic
     } yield (a + b)
     val actual = runM(target)
-    Assertion2(
-      equal(TestResult(2), actual),
-      equal(1, value)
-    )
+    assert
+      .equal(TestResult(2), actual)
+      .equal(1, value)
   }
 
   val `side effect should be executed twice` = TestCase {
@@ -88,10 +86,9 @@ object TestCaseTest extends Dog with Assert {
       b <- test0().monadic
     } yield (a + b)
     val actual = runM(target)
-    Assertion2(
-      equal(TestResult(3), actual),
-      equal(2, value)
-    )
+    assert
+      .equal(TestResult(3), actual)
+      .equal(2, value)
   }
 
   val `setup fixture` = TestCase {
