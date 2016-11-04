@@ -23,6 +23,10 @@ package object dog {
     def skip(reason: String): TestCaseAp[A] =
       FreeAp.lift[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.assertion(() =>
         -\/(NotPassedCause.skip(reason)))))
+
+    def lift: TestCase[A] =
+      Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() =>
+        -\/(self))))
   }
 
   type AssertionResult[A] = NotPassedCause \/ A

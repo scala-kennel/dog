@@ -36,11 +36,34 @@ object TestCaseTest extends Dog with Assert {
   }
 
   val `bind value` = TestCase {
-    val target = for {
-      a <- pass(0).monadic
-      _ <- equal(a, 0).monadic
-    } yield a
+    val target = TestCase {
+      for {
+        a <- pass(0).lift
+        _ <- equal(a, 0).lift
+      } yield a
+    }
     equal(TestResult(0), runM(target))
+  }
+
+  val `multi assertion and bind value` = TestCase {
+    val target = TestCase {
+      for {
+        _ <-
+          assert
+            .equal(0, 1)
+            .equal(0, 2)
+            .lift
+        _ <- equal(1, 0).lift
+      } yield ()
+    }
+    val expected =
+      TestResult.nel(
+        -\/(Violated("expected: 0, but was: 1")),
+        IList.single[AssertionResult[Unit]](
+          \/.left(Violated("expected: 0, but was: 2"))
+        )
+      )
+    equal(expected, runM(target))
   }
 
   val `skip TestCase` = TestCase {
@@ -55,7 +78,7 @@ object TestCaseTest extends Dog with Assert {
     val target = trap(f)
     for {
       e <- target
-      _ <- equal("exception test", e.getMessage).monadic
+      _ <- equal("exception test", e.getMessage).lift
     } yield ()
   }
 
@@ -66,8 +89,8 @@ object TestCaseTest extends Dog with Assert {
       pass(value)
     }
     val target = for {
-      a <- test0.monadic
-      b <- test0.monadic
+      a <- test0.lift
+      b <- test0.lift
     } yield (a + b)
     val actual = runM(target)
     assert
@@ -82,8 +105,8 @@ object TestCaseTest extends Dog with Assert {
       pass(value)
     }
     val target = for {
-      a <- test0().monadic
-      b <- test0().monadic
+      a <- test0().lift
+      b <- test0().lift
     } yield (a + b)
     val actual = runM(target)
     assert
@@ -96,7 +119,7 @@ object TestCaseTest extends Dog with Assert {
     val xs = ListBuffer.empty[Int]
     for {
       _ <- TestCase.fixture(() => xs += 1)
-      _ <- equal(ListBuffer[Int](1), xs).monadic
+      _ <- equal(ListBuffer[Int](1), xs).lift
     } yield ()
   }
 }
