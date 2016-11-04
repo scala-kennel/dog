@@ -68,7 +68,7 @@ object TestCaseTest extends Dog with Assert {
 
   val `skip TestCase` = TestCase {
     def f: Int = throw new Exception("skip test")
-    val target = pass(f).skip("skip")
+    val target = TestCase { pass(f) }.skip("skip")
     val expected = TestResult.nel(-\/(NotPassedCause.skip("skip")), IList.empty[AssertionResult[Int]])
     equal(expected, run(target))
   }

@@ -29,6 +29,13 @@ package object dog {
         -\/(self))))
   }
 
+  implicit class TestCaseSyntax[A](self: => TestCase[A]) {
+
+    def skip(reason: String): TestCase[A] =
+      Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.assertion(() =>
+        -\/(NotPassedCause.skip(reason)))))
+  }
+
   type AssertionResult[A] = NotPassedCause \/ A
 
   type AssertionNel[A] = NonEmptyList[AssertionResult[A]]
