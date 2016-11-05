@@ -9,6 +9,7 @@ This framework is inspired by [Persimmon](https://github.com/persimmon-projects/
 
 * composable test case and assertion
 * [scalaprops](https://github.com/scalaprops/scalaprops) friendly
+* [Scala.js](https://www.scala-js.org/) support
 
 ## latest stable version
 
