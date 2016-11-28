@@ -24,7 +24,7 @@ object DogListener {
 
     import TestResult._
 
-    private[this] def colored(color: String): String => String = color + _ + Console.RESET
+    private[this] def colored(color: String): String => String = _.split("\n").map(color + _ + Console.RESET).mkString("\n")
     private[this] val blue = colored(Console.BLUE)
     private[this] val red = colored(Console.RED)
 
