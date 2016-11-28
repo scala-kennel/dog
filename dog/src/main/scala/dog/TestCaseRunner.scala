@@ -16,7 +16,7 @@ object DefaultTestCaseRunner extends TestCaseRunner {
     })
 
   private[this] def eval[A](config: Config, fa: => ComposableTestC[A]): TestResult[A] = fa._2 match {
-    case HandleError(e) => TestResult.error(IList.single(e), IList.empty)
+    case HandleErrors(es) => TestResult.error(es, IList.empty)
     case Assertion(f) => AssertionResult.toTestResult(f())
     case Fixture(f) =>
       f()
@@ -41,7 +41,7 @@ object DefaultTestCaseApRunner extends TestCaseApRunner {
     })
 
   private[this] def eval[A](config: Config, fa: => ComposableTestC[A]): ValidationResult[A] = fa._2 match {
-    case HandleError(e) => ValidationResult.error(IList.single(e), IList.empty)
+    case HandleErrors(es) => ValidationResult.error(es, IList.empty)
     case Assertion(f) => AssertionResult.toValidationResult(f())
     case Fixture(f) =>
       f()

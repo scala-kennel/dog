@@ -39,9 +39,9 @@ package object props {
     case _: CheckResult.Exhausted | _: CheckResult.Falsified =>
       assertion(() => -\/(NotPassedCause.violate(result.toString)))
     case e: CheckResult.GenException =>
-      HandleError(e.exception)
+      HandleErrors(IList.single(e.exception))
     case e: CheckResult.PropException =>
-      HandleError(e.exception)
+      HandleErrors(IList.single(e.exception))
     case e: CheckResult.Timeout =>
       assertion(() => -\/(NotPassedCause.violate(e.toString)))
     case e: CheckResult.Ignored =>
@@ -57,8 +57,8 @@ package object props {
         prop.check(param, () => cancel, count => ())
       )
     } catch {
-      case e: TimeoutException => HandleError(e)
-      case e: Throwable => HandleError(e)
+      case e: TimeoutException => HandleErrors(IList.single(e))
+      case e: Throwable => HandleErrors(IList.single(e))
     } finally {
       cancel = true
     }
