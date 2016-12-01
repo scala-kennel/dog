@@ -67,7 +67,7 @@ package object props {
   implicit class PropertySyntax(val self: Property) {
 
     def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
-      Free.liftF[ComposableTestC, Unit](LazyTuple2(Param.id, checkProperty(self, param)))
+      Free.liftF[TestFixture, Unit](LazyTuple2(Param.id, checkProperty(self, param)))
   }
 
   implicit class PropertiesSyntax[A](val self: Properties[A]) {
@@ -76,7 +76,7 @@ package object props {
 
     def lift(param: scalaprops.Param = scalaprops.Param.withCurrentTimeSeed()): TestCase[Unit] =
       Tree.treeInstance.foldMap1(self.props.map { case (_, checkOpt) =>
-        Free.liftF[ComposableTestC, Unit](LazyTuple2(Param.id, checkOpt.map(c =>
+        Free.liftF[TestFixture, Unit](LazyTuple2(Param.id, checkOpt.map(c =>
           checkProperty(c.prop, param)).getOrElse(assertion(() => \/-(()))))
         )
       })(identity _)

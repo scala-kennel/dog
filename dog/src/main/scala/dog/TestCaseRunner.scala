@@ -6,7 +6,7 @@ import ComposableTest._
 
 object DefaultTestCaseRunner extends TestCaseRunner {
 
-  override def apply[A](fa: ComposableTestC[A]) =
+  override def apply[A](fa: TestFixture[A]) =
     Kleisli.kleisli((paramEndo: Config) => try {
       val config: Config = fa._1.compose(paramEndo)
       val p = config(Param.default)
@@ -15,7 +15,7 @@ object DefaultTestCaseRunner extends TestCaseRunner {
       case e: Throwable => TestResult.error[A](IList.single(e), IList.empty)
     })
 
-  private[this] def eval[A](config: Config, fa: => ComposableTestC[A]): TestResult[A] = fa._2 match {
+  private[this] def eval[A](config: Config, fa: => TestFixture[A]): TestResult[A] = fa._2 match {
     case HandleErrors(es) => TestResult.error(es, IList.empty)
     case Assertion(f) => AssertionResult.toTestResult(f())
     case Fixture(f) =>
@@ -31,7 +31,7 @@ object DefaultTestCaseRunner extends TestCaseRunner {
 
 object DefaultTestCaseApRunner extends TestCaseApRunner {
 
-  override def apply[A](fa: ComposableTestC[A]) =
+  override def apply[A](fa: TestFixture[A]) =
     Kleisli.kleisli((paramEndo: Config) => try {
       val config: Config = fa._1.compose(paramEndo)
       val p = config(Param.default)
@@ -40,7 +40,7 @@ object DefaultTestCaseApRunner extends TestCaseApRunner {
       case e: Throwable => ValidationResult.error[A](IList.single(e), IList.empty)
     })
 
-  private[this] def eval[A](config: Config, fa: => ComposableTestC[A]): ValidationResult[A] = fa._2 match {
+  private[this] def eval[A](config: Config, fa: => TestFixture[A]): ValidationResult[A] = fa._2 match {
     case HandleErrors(es) => ValidationResult.error(es, IList.empty)
     case Assertion(f) => AssertionResult.toValidationResult(f())
     case Fixture(f) =>

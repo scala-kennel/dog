@@ -30,8 +30,8 @@ trait Dog {
 
 private[dog] object Dog {
 
-  def config(other: Config): ComposableTestC ~> ComposableTestC = new (ComposableTestC ~> ComposableTestC) {
-    override def apply[A](fa: ComposableTestC[A]) =
+  def config(other: Config): TestFixture ~> TestFixture = new (TestFixture ~> TestFixture) {
+    override def apply[A](fa: TestFixture[A]) =
       LazyTuple2(fa._1 compose other, fa._2)
   }
 }

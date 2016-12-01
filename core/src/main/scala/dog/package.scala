@@ -4,35 +4,35 @@ package object dog {
 
   type Config = Endo[Param]
 
-  type RunnableTestCase[A] = Kleisli[TestResult, Config, A]
+  type Test[A] = Kleisli[TestResult, Config, A]
 
-  type RunnableTestCaseV[A] = Kleisli[ValidationResult, Config, A]
+  type TestAp[A] = Kleisli[ValidationResult, Config, A]
 
-  type ComposableTestC[A] = LazyTuple2[Config, ComposableTest[A]]
+  type TestFixture[A] = LazyTuple2[Config, ComposableTest[A]]
 
-  type TestCaseAp[A] = FreeAp[ComposableTestC, A]
+  type TestCaseAp[A] = FreeAp[TestFixture, A]
 
-  type TestCase[A] = Free[ComposableTestC, A]
+  type TestCase[A] = Free[TestFixture, A]
 
-  type TestCaseRunner = ComposableTestC ~> RunnableTestCase
+  type TestCaseRunner = TestFixture ~> Test
 
-  type TestCaseApRunner = ComposableTestC ~> RunnableTestCaseV
+  type TestCaseApRunner = TestFixture ~> TestAp
 
   implicit class TestCaseApSyntax[A](self: => TestCaseAp[A]) {
 
     def skip(reason: String): TestCaseAp[A] =
-      FreeAp.lift[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.assertion(() =>
+      FreeAp.lift[TestFixture, A](LazyTuple2(Param.id, ComposableTest.assertion(() =>
         -\/(NotPassedCause.skip(reason)))))
 
     def lift: TestCase[A] =
-      Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.Gosub(() =>
+      Free.liftF[TestFixture, A](LazyTuple2(Param.id, ComposableTest.Gosub(() =>
         -\/(self))))
   }
 
   implicit class TestCaseSyntax[A](self: => TestCase[A]) {
 
     def skip(reason: String): TestCase[A] =
-      Free.liftF[ComposableTestC, A](LazyTuple2(Param.id, ComposableTest.assertion(() =>
+      Free.liftF[TestFixture, A](LazyTuple2(Param.id, ComposableTest.assertion(() =>
         -\/(NotPassedCause.skip(reason)))))
   }
 
