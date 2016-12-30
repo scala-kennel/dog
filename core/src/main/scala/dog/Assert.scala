@@ -45,20 +45,20 @@ trait Assert { self =>
 
   implicit class TestCaseApUnitSyntax private[dog](val test: TestCaseAp[Unit]) {
 
-    private[this] def compose(other: TestCaseAp[Unit]) =
+    private[this] def compose(other: TestCaseAp[Unit]): TestCaseAp[Unit] =
       (test |@| other) { case (_, _) => () }
 
-    def equal[A](expected: A, actual: A) =
+    def equal[A](expected: A, actual: A): TestCaseAp[Unit] =
       compose(self.equal(expected, actual))
 
-    def eq[A](expected: A, actual: A)(implicit E: scalaz.Equal[A]) =
+    def eq[A](expected: A, actual: A)(implicit E: scalaz.Equal[A]): TestCaseAp[Unit] =
       compose(self.eq(expected, actual))
 
-    def pass[A](value: A) = test.map(_ => value)
+    def pass[A](value: A): TestCaseAp[A] = test.map(_ => value)
 
-    def fail[A](reason: String) =
+    def fail[A](reason: String): TestCaseAp[A] =
       (test |@| self.fail[A](reason)) { case (_, v) => v }
 
-    def pred(p: Boolean) = compose(self.pred(p))
+    def pred(p: Boolean): TestCaseAp[Unit] = compose(self.pred(p))
   }
 }
