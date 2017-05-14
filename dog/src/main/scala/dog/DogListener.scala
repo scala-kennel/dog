@@ -57,10 +57,10 @@ object DogListener {
     override def onFinish[A](obj: Dog, name: String, result: TestResult[A], logger: Logger) = result match {
       case Done(results) => results match {
         case NonEmptyList(\/-(_), INil()) => logger.info(".")
-        case NonEmptyList(-\/(Skipped(reason)), INil()) => logger.info("S")
+        case NonEmptyList(-\/(Skipped(_)), INil()) => logger.info("S")
         case _ => logger.info("x")
       }
-      case Error(es, cs) => logger.info("E")
+      case Error(_, _) => logger.info("E")
     }
   }
 }
