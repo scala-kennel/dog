@@ -1,10 +1,10 @@
 package dog
 
 import scalaz._
-import scala.scalajs.js.annotation.JSExportDescendentObjects
+import scala.scalajs.reflect.annotation.EnableReflectiveInstantiation
 import java.util.concurrent.TimeUnit
 
-@JSExportDescendentObjects
+@EnableReflectiveInstantiation
 trait Dog {
 
   def paramEndo: Config = Param.id
