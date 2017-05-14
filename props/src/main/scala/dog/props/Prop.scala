@@ -80,15 +80,15 @@ object Prop {
 
   def property[R: AsProperty, A1](f: A1 => R)(implicit param: SParam,
     A1: Gen[A1], S1: Shrink[A1]): TestCase[A1] =
-    Prop.property1(f)
+    property1(f, param)
 
   def property[R: AsProperty, A1, A2](f: (A1, A2) => R)(implicit param: SParam,
     A1: Gen[A1], A2: Gen[A2], S1: Shrink[A1], S2: Shrink[A2]): TestCase[(A1, A2)] =
-    Prop.property2(f)
+    property2(f, param)
 
   def property[R: AsProperty, A1, A2, A3](f: (A1, A2, A3) => R)(implicit param: SParam,
     A1: Gen[A1], A2: Gen[A2], A3: Gen[A3], S1: Shrink[A1], S2: Shrink[A2], S3: Shrink[A3]): TestCase[(A1, A2, A3)] =
-    Prop.property3(f)
+    property3(f, param)
 
   object NoShrink {
     def property1[R: AsProperty, A1](f: A1 => Property, param: SParam = SParam.withCurrentTimeSeed())
