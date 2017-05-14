@@ -18,8 +18,7 @@ object build {
     CrossProject(id, file(id), CustomCrossType).settings(
       commonSettings: _*
     ).settings(
-      scalaJSStage in Test := FastOptStage,
-      jsEnv := NodeJSEnv().value
+      scalaJSStage in Test := FastOptStage
     )
 
   val modules: List[String] = (
